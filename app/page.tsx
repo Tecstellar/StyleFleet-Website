@@ -1137,7 +1137,10 @@ export default function HomePage() {
                     Request a free salon demo call or live onboarding:
                   </p>
                   <p className="text-sm font-extrabold text-white">
-                    <a href="tel:+918870500106" className="hover:text-[#D4AF37] transition-colors" style={{ textDecoration: 'none' }}>
+                    <a href="tel:+918870500106" className="hover:text-[#D4AF37] transition-colors inline-flex items-center gap-2" style={{ textDecoration: 'none' }}>
+                      <svg className="w-4 h-4 text-[#D4AF37] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                      </svg>
                       +91 88705 00106
                     </a>
                   </p>
@@ -1146,26 +1149,27 @@ export default function HomePage() {
                       href="https://wa.me/918870500106?text=Hi%20StyleFleet%2C%20I%20would%20like%20to%20request%20a%20free%20demo%20call."
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5"
+                      className="hover:text-emerald-400 transition-colors inline-flex items-center gap-2"
                       style={{ textDecoration: 'none' }}
                     >
-                      <span>💬</span> WhatsApp Demo (+91 88705 00106)
+                      <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.06-2.131-.538-1.839-.765-3.023-2.627-3.114-2.748-.09-.122-.745-.989-.745-1.895 0-.907.472-1.352.641-1.536.17-.184.37-.23.493-.23.123 0 .247.001.355.006.114.005.267-.043.418.32.155.371.531 1.294.577 1.389.047.094.078.204.016.326-.062.123-.093.2-.185.309-.092.109-.194.244-.277.328-.093.094-.19.196-.082.381.108.185.481.794 1.031 1.285.709.632 1.306.828 1.492.92.185.093.293.078.401-.047.108-.124.463-.54.586-.726.123-.185.247-.154.416-.093.17.062 1.079.509 1.264.601.185.093.308.139.354.216.046.078.046.452-.098.857z" />
+                      </svg>
+                      <span>WhatsApp Demo (+91 88705 00106)</span>
                     </a>
                     <a
-                      href="https://instagram.com/stylefleet"
+                      href="https://instagram.com/stylefleet.app"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-[#D4AF37] transition-colors inline-flex items-center gap-1.5"
+                      className="hover:text-[#D4AF37] transition-colors inline-flex items-center gap-2"
                       style={{ textDecoration: 'none' }}
                     >
-                      <span>📸</span> Instagram (@stylefleet)
-                    </a>
-                    <a
-                      href="mailto:support@stylefleet.in"
-                      className="hover:text-white transition-colors inline-flex items-center gap-1.5"
-                      style={{ textDecoration: 'none' }}
-                    >
-                      <span>✉️</span> support@stylefleet.in
+                      <svg className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                      </svg>
+                      <span>Instagram (@stylefleet.app)</span>
                     </a>
                   </div>
                 </div>
@@ -1183,7 +1187,7 @@ export default function HomePage() {
                       rel="noopener noreferrer"
                       className="font-bold text-white hover:text-[#D4AF37] underline underline-offset-4 decoration-[#D4AF37]/50 hover:decoration-[#D4AF37] transition-colors"
                     >
-                      TecStellar
+                      Tecstellar
                     </a>
                     .
                   </p>
@@ -1206,25 +1210,18 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Bottom Row: Made for Salons on Left & Admin Link on Opposite Side */}
-              <div className="border-t border-white/10 pt-6 pb-2 flex items-center justify-between text-xs">
-                <p className="text-xs font-bold text-slate-400 tracking-wide flex items-center gap-1.5 select-none m-0">
-                  <span className="text-[#D4AF37]">✦</span> Made for Salons <span className="text-[#D4AF37]">✦</span>
-                </p>
-
-                {/* Single Word Admin Link on Opposite Side */}
-                <div>
-                  <a
-                    href="https://stylefleet-admin.tecstellar.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ textDecoration: 'none' }}
-                    className="text-xs font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-wider transition-colors select-none"
-                    title="StyleFleet Master Admin Portal"
-                  >
-                    Admin
-                  </a>
-                </div>
+              {/* Bottom Row: Only Admin Link */}
+              <div className="border-t border-white/10 pt-5 pb-2 flex items-center justify-end text-xs">
+                <a
+                  href="https://stylefleet-admin.tecstellar.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: 'none' }}
+                  className="text-xs font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-wider transition-colors select-none"
+                  title="StyleFleet Master Admin Portal"
+                >
+                  Admin
+                </a>
               </div>
             </div>
           </footer>
@@ -1773,21 +1770,41 @@ export default function HomePage() {
                 <div className="md:col-span-3 space-y-2">
                   <h4 className="text-xs font-black text-[#D4AF37] uppercase tracking-wider">Contact</h4>
                   <p className="text-xs text-white font-bold">
-                    <a href="tel:+918870500106" className="hover:text-[#D4AF37] transition-colors" style={{ textDecoration: 'none' }}>
+                    <a href="tel:+918870500106" className="hover:text-[#D4AF37] transition-colors inline-flex items-center gap-1.5" style={{ textDecoration: 'none' }}>
+                      <svg className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                      </svg>
                       +91 88705 00106
                     </a>
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <div className="flex flex-col gap-1.5 text-xs text-slate-400">
                     <a
                       href="https://wa.me/918870500106?text=Hi%20StyleFleet%2C%20I%20would%20like%20to%20request%20a%20free%20demo%20call."
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:text-emerald-400 transition-colors"
+                      className="hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5"
                       style={{ textDecoration: 'none' }}
                     >
-                      WhatsApp: +91 88705 00106
+                      <svg className="w-3.5 h-3.5 text-emerald-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.06-2.131-.538-1.839-.765-3.023-2.627-3.114-2.748-.09-.122-.745-.989-.745-1.895 0-.907.472-1.352.641-1.536.17-.184.37-.23.493-.23.123 0 .247.001.355.006.114.005.267-.043.418.32.155.371.531 1.294.577 1.389.047.094.078.204.016.326-.062.123-.093.2-.185.309-.092.109-.194.244-.277.328-.093.094-.19.196-.082.381.108.185.481.794 1.031 1.285.709.632 1.306.828 1.492.92.185.093.293.078.401-.047.108-.124.463-.54.586-.726.123-.185.247-.154.416-.093.17.062 1.079.509 1.264.601.185.093.308.139.354.216.046.078.046.452-.098.857z" />
+                      </svg>
+                      <span>WhatsApp (+91 88705 00106)</span>
                     </a>
-                  </p>
+                    <a
+                      href="https://instagram.com/stylefleet.app"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-[#D4AF37] transition-colors inline-flex items-center gap-1.5"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <svg className="w-3.5 h-3.5 text-[#D4AF37] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                      </svg>
+                      <span>@stylefleet.app</span>
+                    </a>
+                  </div>
                 </div>
                 <div className="md:col-span-3 space-y-2">
                   <h4 className="text-xs font-black text-[#D4AF37] uppercase tracking-wider">Company & Legal</h4>
@@ -1799,7 +1816,7 @@ export default function HomePage() {
                       rel="noopener noreferrer"
                       className="font-bold text-white hover:text-[#D4AF37] underline underline-offset-4 decoration-[#D4AF37]/50 transition-colors"
                     >
-                      TecStellar
+                      Tecstellar
                     </a>
                     .
                   </p>
@@ -1823,22 +1840,17 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="border-t border-white/10 pt-5 pb-2 flex items-center justify-between text-xs">
-                <p className="text-xs font-bold text-slate-400 tracking-wide flex items-center gap-1.5 select-none m-0">
-                  <span className="text-[#D4AF37]">✦</span> Made for Salons <span className="text-[#D4AF37]">✦</span>
-                </p>
-                <div>
-                  <a
-                    href="https://stylefleet-admin.tecstellar.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ textDecoration: 'none' }}
-                    className="text-xs font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-wider transition-colors select-none"
-                    title="StyleFleet Master Admin Portal"
-                  >
-                    Admin
-                  </a>
-                </div>
+              <div className="border-t border-white/10 pt-5 pb-2 flex items-center justify-end text-xs">
+                <a
+                  href="https://stylefleet-admin.tecstellar.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ textDecoration: 'none' }}
+                  className="text-xs font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-wider transition-colors select-none"
+                  title="StyleFleet Master Admin Portal"
+                >
+                  Admin
+                </a>
               </div>
             </div>
           </footer>
@@ -1878,7 +1890,7 @@ export default function HomePage() {
               </p>
               <p>
                 <strong className="text-white block mb-0.5">5. Operator & Data Rights:</strong>
-                StyleFleet is engineered and operated by <strong className="text-white">TecStellar Technologies</strong> (<a href="https://tecstellar.com" target="_blank" rel="noopener noreferrer" className="text-[#D4AF37] underline">tecstellar.com</a>). For data inquiries or account deletion, contact our support desk at <strong>+91 88705 00106</strong> or <strong>support@stylefleet.in</strong>.
+                StyleFleet is engineered and operated by <strong className="text-white">Tecstellar Technologies</strong> (<a href="https://tecstellar.com" target="_blank" rel="noopener noreferrer" className="text-[#D4AF37] underline">tecstellar.com</a>). For data inquiries or account deletion, contact our support desk at <strong>+91 88705 00106</strong>.
               </p>
             </div>
             <div className="pt-2 text-right">
@@ -1927,7 +1939,7 @@ export default function HomePage() {
               </p>
               <p>
                 <strong className="text-white block mb-0.5">5. Operator & Intellectual Property:</strong>
-                StyleFleet is engineered and powered by <strong className="text-white">TecStellar Technologies</strong> (<a href="https://tecstellar.com" target="_blank" rel="noopener noreferrer" className="text-[#D4AF37] underline">tecstellar.com</a>). All intellectual property rights are reserved. Support hotline: <strong>+91 88705 00106</strong>.
+                StyleFleet is engineered and powered by <strong className="text-white">Tecstellar Technologies</strong> (<a href="https://tecstellar.com" target="_blank" rel="noopener noreferrer" className="text-[#D4AF37] underline">tecstellar.com</a>). All intellectual property rights are reserved. Support hotline: <strong>+91 88705 00106</strong>.
               </p>
             </div>
             <div className="pt-2 text-right">
