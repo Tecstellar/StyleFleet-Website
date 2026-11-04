@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { OwnerRegistrationView } from '@/components/owner-registration';
 import { findSalonByPhone } from '@/lib/supabase-service';
+import { supabase } from '@/lib/supabase';
 
 // Service list for the interactive front-desk demo
 const DEMO_SERVICES = [
@@ -217,8 +218,10 @@ export default function HomePage() {
         setQrSessionId(data.sessionId);
         setQrPairCode(data.pairCode);
         setQrExpiresIn(data.expiresIn || 180);
+        const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+        const qrContent = currentOrigin ? `${data.qrData}&origin=${encodeURIComponent(currentOrigin)}` : data.qrData;
         const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
-          data.qrData
+          qrContent
         )}&color=07152B&bgcolor=FFFFFF&qzone=2`;
         setQrDataUrl(qrImg);
       } else {
@@ -253,45 +256,85 @@ export default function HomePage() {
     return () => clearInterval(timer);
   }, [view, loginMode, isQrExpired, qrSessionId]);
 
-  // Poll for QR scan authorization from mobile app
+  // Poll and Realtime listener for QR scan authorization from mobile app
   useEffect(() => {
     if (view !== 'login' || loginMode !== 'qr' || isQrExpired || !qrSessionId) return;
 
-    let isPolling = true;
+    let isSubscribed = true;
+
+    const handleAuthenticated = (authPayload: any) => {
+      if (!isSubscribed) return;
+      isSubscribed = false;
+
+      clearLocalSalonCache();
+
+      const shopName = authPayload.shopName || 'StyleFleet Salon';
+      showToast(`⚡ Mobile Linked! Welcome to ${shopName}.`, 'success');
+
+      localStorage.setItem('stylefleet_shop_id', authPayload.shopId);
+      localStorage.setItem(
+        'stylefleet_auth_session',
+        JSON.stringify({
+          isLoggedIn: true,
+          role: authPayload.role || role,
+          phone: authPayload.phone,
+          shopId: authPayload.shopId,
+          shopName: shopName,
+          ownerName: authPayload.ownerName,
+          staffId: authPayload.staffId,
+          staffName: authPayload.staffName,
+          stylistName: authPayload.staffName || authPayload.ownerName || 'User',
+          loginTime: new Date().toISOString(),
+        })
+      );
+
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 500);
+    };
+
+    // 1. Supabase Realtime channel for zero-latency, DNS-free mobile linking
+    const sessionChannel = supabase.channel(`sf-qr:${qrSessionId}`, {
+      config: { broadcast: { self: false } },
+    });
+    sessionChannel
+      .on('broadcast', { event: 'authorize' }, ({ payload }) => {
+        if (payload?.shopId) {
+          handleAuthenticated(payload);
+        }
+      })
+      .subscribe();
+
+    let codeChannel: any = null;
+    if (qrPairCode) {
+      codeChannel = supabase.channel(`sf-qr:code_${qrPairCode}`, {
+        config: { broadcast: { self: false } },
+      });
+      codeChannel
+        .on('broadcast', { event: 'authorize' }, ({ payload }: any) => {
+          if (payload?.shopId) {
+            handleAuthenticated(payload);
+          }
+        })
+        .subscribe();
+    }
+
+    // 2. Fallback polling for HTTP/server session
     const interval = setInterval(async () => {
-      if (!isPolling) return;
+      if (!isSubscribed) return;
       try {
         const res = await fetch(`/api/auth/qr-session?sessionId=${qrSessionId}`);
         const data = await res.json();
-        if (!isPolling) return;
+        if (!isSubscribed) return;
 
         if (data.status === 'authenticated' && data.shopId) {
-          isPolling = false;
-          clearInterval(interval);
-
-          clearLocalSalonCache();
-
-          const shopName = data.shopName || 'StyleFleet Salon';
-          showToast(`⚡ Mobile Linked! Welcome to ${shopName}.`, 'success');
-
-          localStorage.setItem('stylefleet_shop_id', data.shopId);
-          localStorage.setItem(
-            'stylefleet_auth_session',
-            JSON.stringify(
-              data.authSession || {
-                isLoggedIn: true,
-                role: data.role || role,
-                phone: data.phone,
-                shopId: data.shopId,
-                shopName: shopName,
-                loginTime: new Date().toISOString(),
-              }
-            )
-          );
-
-          setTimeout(() => {
-            router.push('/dashboard');
-          }, 600);
+          handleAuthenticated({
+            shopId: data.shopId,
+            role: data.role,
+            phone: data.phone,
+            shopName: data.shopName,
+            ...(data.authSession || {}),
+          });
         } else if (data.status === 'expired') {
           setIsQrExpired(true);
         }
@@ -301,10 +344,12 @@ export default function HomePage() {
     }, 2000);
 
     return () => {
-      isPolling = false;
+      isSubscribed = false;
       clearInterval(interval);
+      supabase.removeChannel(sessionChannel);
+      if (codeChannel) supabase.removeChannel(codeChannel);
     };
-  }, [view, loginMode, isQrExpired, qrSessionId, role, router]);
+  }, [view, loginMode, isQrExpired, qrSessionId, qrPairCode, role, router]);
 
   // Simulator helper to test mobile app scan confirmation directly on web
   const handleSimulateAppScan = async () => {
