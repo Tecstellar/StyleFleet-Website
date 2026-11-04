@@ -1040,77 +1040,191 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* Footer */}
-          <footer>
-            <div className="wrap">
-              <div>
-                <a className="logo" href="#top">
-                  <img
-                    src="/assets/stylefleet-logo.png"
-                    alt="StyleFleet Logo"
-                    width={38}
-                    height={38}
-                    className="logo-img"
-                  />
-                  <span>StyleFleet</span>
-                </a>
-                <p className="footer-sub">Salon Management Platform</p>
+          {/* ================= COMPREHENSIVE LUXURY FOOTER ================= */}
+          <footer className="footer-luxury border-t border-white/10 bg-[#071329]/95 text-slate-300 py-12">
+            <div className="wrap max-w-6xl mx-auto px-4 sm:px-6">
+              {/* Top Section: 3 Balanced Columns */}
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 pb-10">
+                {/* Column 1: Brand Logo, Description & App Store Buttons */}
+                <div className="md:col-span-6 space-y-4">
+                  <a className="logo inline-flex items-center gap-2.5" href="#top" style={{ textDecoration: 'none' }}>
+                    <img
+                      src="/assets/stylefleet-logo.png"
+                      alt="StyleFleet Logo"
+                      width={40}
+                      height={40}
+                      className="logo-img"
+                    />
+                    <span className="text-xl font-black tracking-tight text-[#D4AF37]">StyleFleet</span>
+                  </a>
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md">
+                    The modern luxury salon management platform. Express digital billing, real-time appointment scheduling, multi-chair stylist performance matrix, and automated WhatsApp engagement in one calm workspace.
+                  </p>
+
+                  {/* App Download Buttons */}
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    {/* Google Play Button */}
+                    <a
+                      className="btn store-btn gold"
+                      style={{
+                        padding: '9px 18px',
+                        minWidth: '170px',
+                        textDecoration: 'none',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                      }}
+                      href="https://play.google.com/store/apps/details?id=com.stylefleet.app"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <svg className="store-icon" viewBox="0 0 512 512" style={{ width: '22px', height: '22px', flexShrink: 0 }}>
+                        <path fill="#4285F4" d="M48.2 24.3C44.7 28 42.7 33.7 42.7 41.3v429.4c0 7.6 2 13.3 5.5 17l2.1 1.9L274.4 265.5v-5.2L50.3 22.4l-2.1 1.9z" />
+                        <path fill="#FBBC04" d="M349 340.2l-74.6-74.7v-5.2l74.6-74.7 1.8 1 88.2 50.1c25.2 14.3 25.2 37.8 0 52.2l-88.2 50.1-1.8 1.2z" />
+                        <path fill="#EA4335" d="M350.8 339l-76.4-76.4L50.3 486.7c8.3 8.8 22.1 9.9 37.4 1.2L350.8 339z" />
+                        <path fill="#34A853" d="M350.8 173L87.7 24.1C72.4 15.4 58.6 16.5 50.3 25.3l224.1 224.1 76.4-76.4z" />
+                      </svg>
+                      <div>
+                        <span className="store-sub" style={{ fontSize: '0.6rem', display: 'block', lineHeight: 1.1, fontWeight: 700, letterSpacing: '0.06em' }}>
+                          GET IT ON
+                        </span>
+                        <strong className="store-title" style={{ fontSize: '0.98rem', display: 'block', lineHeight: 1.15, fontWeight: 800 }}>
+                          Google Play
+                        </strong>
+                      </div>
+                    </a>
+
+                    {/* App Store Button */}
+                    <a
+                      className="btn store-btn dark-store"
+                      style={{
+                        padding: '9px 18px',
+                        minWidth: '170px',
+                        textDecoration: 'none',
+                        background: 'rgba(255,255,255,0.06)',
+                        borderColor: 'rgba(217, 178, 106, 0.45)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                      }}
+                      href="#ios-download"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        showToast('StyleFleet iOS App is rolling out on the App Store.', 'success');
+                      }}
+                    >
+                      <svg className="store-icon" viewBox="0 0 170 170" fill="currentColor" style={{ width: '22px', height: '22px', flexShrink: 0 }}>
+                        <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.67-7.81-11.96-14.34-5.77-8.7-10.42-18.79-13.97-30.27-3.55-11.48-5.33-22.42-5.33-32.83 0-14.36 3.55-26.33 10.66-35.91 7.11-9.58 16.14-14.43 27.09-14.56 5.34 0 11.27 1.48 17.79 4.43 6.52 2.96 10.74 4.49 12.67 4.49 1.74 0 6.06-1.57 12.96-4.71 6.9-3.14 12.96-4.58 18.18-4.33 13.94.65 24.96 5.86 33.05 15.64-12.19 7.4-18.17 17.51-17.95 30.34.22 10.02 4.13 18.49 11.75 25.43 7.62 6.94 16.75 10.97 27.42 12.09-2.18 6.53-4.91 13.28-8.2 20.25zM119.22 31.84c0-7.72 2.76-14.89 8.28-21.52 5.53-6.63 12.41-10.66 20.65-12.09.22 1.09.33 2.18.33 3.26 0 7.61-2.85 14.86-8.54 21.74-5.69 6.87-12.71 10.87-21.06 12-0.22-1.09-.33-2.18-.33-3.39z" />
+                      </svg>
+                      <div>
+                        <span className="store-sub" style={{ fontSize: '0.6rem', display: 'block', lineHeight: 1.1, fontWeight: 700, letterSpacing: '0.06em', opacity: 0.85 }}>
+                          DOWNLOAD ON THE
+                        </span>
+                        <strong className="store-title" style={{ fontSize: '0.98rem', display: 'block', lineHeight: 1.15, fontWeight: 800 }}>
+                          App Store
+                        </strong>
+                      </div>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Column 2: Contact & Demo */}
+                <div className="md:col-span-3 space-y-3">
+                  <h4 className="text-xs font-black text-[#D4AF37] uppercase tracking-wider">
+                    Contact & Demo
+                  </h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Request a free salon demo call or live onboarding:
+                  </p>
+                  <p className="text-sm font-extrabold text-white">
+                    <a href="tel:+918870500106" className="hover:text-[#D4AF37] transition-colors" style={{ textDecoration: 'none' }}>
+                      +91 88705 00106
+                    </a>
+                  </p>
+                  <div className="flex flex-col gap-2 pt-1 text-xs text-slate-400">
+                    <a
+                      href="https://wa.me/918870500106?text=Hi%20StyleFleet%2C%20I%20would%20like%20to%20request%20a%20free%20demo%20call."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <span>💬</span> WhatsApp Demo (+91 88705 00106)
+                    </a>
+                    <a
+                      href="https://instagram.com/stylefleet"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-[#D4AF37] transition-colors inline-flex items-center gap-1.5"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <span>📸</span> Instagram (@stylefleet)
+                    </a>
+                    <a
+                      href="mailto:support@stylefleet.in"
+                      className="hover:text-white transition-colors inline-flex items-center gap-1.5"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      <span>✉️</span> support@stylefleet.in
+                    </a>
+                  </div>
+                </div>
+
+                {/* Column 3: Company, Legal & Policies */}
+                <div className="md:col-span-3 space-y-3">
+                  <h4 className="text-xs font-black text-[#D4AF37] uppercase tracking-wider">
+                    Company & Legal
+                  </h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    © 2026 StyleFleet. Powered by{' '}
+                    <a
+                      href="https://tecstellar.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-white hover:text-[#D4AF37] underline underline-offset-4 decoration-[#D4AF37]/50 hover:decoration-[#D4AF37] transition-colors"
+                    >
+                      TecStellar
+                    </a>
+                    .
+                  </p>
+                  <div className="flex flex-col gap-2 pt-1 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setShowPrivacyModal(true)}
+                      className="text-left text-slate-400 hover:text-white transition-colors underline underline-offset-3 cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      Privacy Policy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-left text-slate-400 hover:text-white transition-colors underline underline-offset-3 cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      Terms and Conditions
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div>
-                Request a free demo call: <b>+91 88705 00106</b>
-                <br />
-                <a
-                  href="https://wa.me/918870500106?text=Hi%20StyleFleet%2C%20I%20would%20like%20to%20request%20a%20free%20demo%20call."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  WhatsApp demo
-                </a>{' '}
-                ·{' '}
-                <a
-                  href="https://instagram.com/stylefleet"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Instagram
-                </a>
-              </div>
-              <div>
-                © 2026 StyleFleet. Powered by Tecstellar.
-                <br />
-                <button
-                  type="button"
-                  onClick={() => setShowPrivacyModal(true)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    font: 'inherit',
-                    color: 'inherit',
-                    textDecoration: 'underline',
-                    textUnderlineOffset: '3px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Privacy policy
-                </button>{' '}
-                ·{' '}
-                <button
-                  type="button"
-                  onClick={() => setShowTermsModal(true)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    padding: 0,
-                    font: 'inherit',
-                    color: 'inherit',
-                    textDecoration: 'underline',
-                    textUnderlineOffset: '3px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  Terms and conditions
-                </button>
+
+              {/* Bottom Row: Made for Salons & Admin Link */}
+              <div className="border-t border-white/10 pt-6 pb-2 flex flex-col items-center justify-center gap-3 text-center">
+                <p className="text-xs font-bold text-slate-400 tracking-wide flex items-center justify-center gap-1.5 select-none">
+                  <span className="text-[#D4AF37]">✦</span> Made for Salons <span className="text-[#D4AF37]">✦</span>
+                </p>
+
+                {/* Single Word Admin Link */}
+                <div className="pt-1">
+                  <a
+                    href="https://stylefleet-admin.tecstellar.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ textDecoration: 'none' }}
+                    className="text-[11px] font-mono font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-widest lowercase transition-colors select-none"
+                    title="StyleFleet Master Admin Portal"
+                  >
+                    admin
+                  </a>
+                </div>
               </div>
             </div>
           </footer>
@@ -1637,26 +1751,94 @@ export default function HomePage() {
             </div>
           </section>
 
-          <footer>
-            <div className="wrap">
-              <div>
-                <a className="logo" href="#top">
-                  <img
-                    src="/assets/stylefleet-logo.png"
-                    alt="StyleFleet Logo"
-                    width={38}
-                    height={38}
-                    className="logo-img"
-                  />
-                  <span>StyleFleet</span>
-                </a>
-                <p className="footer-sub">Salon Management Platform</p>
+          {/* ================= COMPREHENSIVE LUXURY FOOTER (LOGIN VIEW) ================= */}
+          <footer className="footer-luxury border-t border-white/10 bg-[#071329]/95 text-slate-300 py-10 mt-12">
+            <div className="wrap max-w-6xl mx-auto px-4 sm:px-6">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-8">
+                <div className="md:col-span-6 space-y-3">
+                  <div className="flex items-center gap-2.5">
+                    <img
+                      src="/assets/stylefleet-logo.png"
+                      alt="StyleFleet Logo"
+                      width={36}
+                      height={36}
+                      className="logo-img"
+                    />
+                    <span className="text-lg font-black tracking-tight text-[#D4AF37]">StyleFleet</span>
+                  </div>
+                  <p className="text-xs text-slate-300 max-w-md leading-relaxed">
+                    The modern luxury salon management platform. Express digital billing, real-time appointments, stylist performance, and WhatsApp customer engagement.
+                  </p>
+                </div>
+                <div className="md:col-span-3 space-y-2">
+                  <h4 className="text-xs font-black text-[#D4AF37] uppercase tracking-wider">Contact</h4>
+                  <p className="text-xs text-white font-bold">
+                    <a href="tel:+918870500106" className="hover:text-[#D4AF37] transition-colors" style={{ textDecoration: 'none' }}>
+                      +91 88705 00106
+                    </a>
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    <a
+                      href="https://wa.me/918870500106?text=Hi%20StyleFleet%2C%20I%20would%20like%20to%20request%20a%20free%20demo%20call."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:text-emerald-400 transition-colors"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      WhatsApp: +91 88705 00106
+                    </a>
+                  </p>
+                </div>
+                <div className="md:col-span-3 space-y-2">
+                  <h4 className="text-xs font-black text-[#D4AF37] uppercase tracking-wider">Company & Legal</h4>
+                  <p className="text-xs text-slate-300">
+                    © 2026 StyleFleet. Powered by{' '}
+                    <a
+                      href="https://tecstellar.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-bold text-white hover:text-[#D4AF37] underline underline-offset-4 decoration-[#D4AF37]/50 transition-colors"
+                    >
+                      TecStellar
+                    </a>
+                    .
+                  </p>
+                  <div className="flex gap-3 text-xs pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowPrivacyModal(true)}
+                      className="text-slate-400 hover:text-white underline underline-offset-3 cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      Privacy Policy
+                    </button>
+                    <span>·</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-slate-400 hover:text-white underline underline-offset-3 cursor-pointer bg-transparent border-0 p-0"
+                    >
+                      Terms
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div>
-                Request a free demo call: <b>+91 88705 00106</b>
-              </div>
-              <div>
-                © 2026 StyleFleet. Powered by Tecstellar.
+
+              <div className="border-t border-white/10 pt-5 pb-2 flex flex-col items-center justify-center gap-2 text-center">
+                <p className="text-xs font-bold text-slate-400 tracking-wide flex items-center justify-center gap-1.5 select-none">
+                  <span className="text-[#D4AF37]">✦</span> Made for Salons <span className="text-[#D4AF37]">✦</span>
+                </p>
+                <div>
+                  <a
+                    href="https://stylefleet-admin.tecstellar.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ textDecoration: 'none' }}
+                    className="text-[11px] font-mono font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-widest lowercase transition-colors select-none"
+                    title="StyleFleet Master Admin Portal"
+                  >
+                    admin
+                  </a>
+                </div>
               </div>
             </div>
           </footer>
@@ -1677,18 +1859,26 @@ export default function HomePage() {
                 ✕
               </button>
             </div>
-            <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
+            <div className="space-y-3.5 text-xs text-slate-300 leading-relaxed">
               <p>
-                <strong>1. Data Ownership:</strong> All client records, invoices, staff commissions, and financial metrics entered into StyleFleet remain the exclusive property of your salon.
+                <strong className="text-white block mb-0.5">1. Salon Data Ownership:</strong>
+                All salon client records, phone numbers, visit histories, appointment bookings, services rendered, pricing, digital bills, and daily revenue metrics entered into StyleFleet remain the exclusive and confidential property of your salon.
               </p>
               <p>
-                <strong>2. SMS & Authentication:</strong> Mobile verification codes are dispatched strictly for account security and two-step factor authorization. Your salon phone numbers will never be sold, rented, or shared with third-party advertisers.
+                <strong className="text-white block mb-0.5">2. Client Data & WhatsApp Delivery:</strong>
+                Client phone numbers are utilized strictly for account security, appointment notifications, and delivering official digital invoices via WhatsApp or SMS. Client contact information is never sold, leased, or shared with third-party advertisers.
               </p>
               <p>
-                <strong>3. Cloud Security:</strong> All transactional logs and client databases are secured via enterprise-grade end-to-end encrypted databases powered by Supabase.
+                <strong className="text-white block mb-0.5">3. Staff & Financial Privacy:</strong>
+                Stylist commissions, attendance records, tip allocations, and owner financial dashboards are secured by role-based authentication and restricted permissions.
               </p>
               <p>
-                <strong>4. Contact & Inquiries:</strong> For questions regarding data processing or account deletion, contact our support desk at +91 88705 00106 or support@stylefleet.in.
+                <strong className="text-white block mb-0.5">4. Cloud Encryption & Security:</strong>
+                All transactions and database logs are encrypted using enterprise TLS/SSL in transit and end-to-end encrypted storage powered by Supabase.
+              </p>
+              <p>
+                <strong className="text-white block mb-0.5">5. Operator & Data Rights:</strong>
+                StyleFleet is engineered and operated by <strong className="text-white">TecStellar Technologies</strong> (<a href="https://tecstellar.com" target="_blank" rel="noopener noreferrer" className="text-[#D4AF37] underline">tecstellar.com</a>). For data inquiries or account deletion, contact our support desk at <strong>+91 88705 00106</strong> or <strong>support@stylefleet.in</strong>.
               </p>
             </div>
             <div className="pt-2 text-right">
@@ -1718,18 +1908,26 @@ export default function HomePage() {
                 ✕
               </button>
             </div>
-            <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
+            <div className="space-y-3.5 text-xs text-slate-300 leading-relaxed">
               <p>
-                <strong>1. Platform Service:</strong> StyleFleet provides comprehensive cloud salon management software including multi-chair matrix, digital WhatsApp billing, and financial audits.
+                <strong className="text-white block mb-0.5">1. Platform Services:</strong>
+                StyleFleet provides comprehensive cloud salon management software, including express digital POS billing, live multi-chair matrix tracking, appointment scheduling, and automated WhatsApp invoice delivery.
               </p>
               <p>
-                <strong>2. Subscription & Taxation:</strong> All stated subscription plans are exclusive of 18% GST (9% CGST + 9% SGST). Official tax invoices are issued automatically upon plan activation.
+                <strong className="text-white block mb-0.5">2. Account Responsibility & Security:</strong>
+                Salon owners and staff are responsible for maintaining confidentiality of their mobile login OTPs and managing team access permissions within their workspace.
               </p>
               <p>
-                <strong>3. Fair Usage:</strong> Paid plans include unlimited digital billing, appointment bookings, and staff management. Automated messaging is subject to standard WhatsApp Business guidelines.
+                <strong className="text-white block mb-0.5">3. Billing & Due Settlement Accuracy:</strong>
+                The platform computes transaction totals, GST, partial payments, and pending dues based on salon inputs. Settle due records synchronize seamlessly across the web workspace and the StyleFleet Android application.
               </p>
               <p>
-                <strong>4. Operator:</strong> StyleFleet is engineered and powered by Tecstellar. All intellectual property rights are reserved. Support hotline: +91 88705 00106.
+                <strong className="text-white block mb-0.5">4. Subscriptions & Taxation:</strong>
+                Stated plans are billed in Indian Rupees (INR) exclusive of applicable 18% GST (9% CGST + 9% SGST). Computer-generated tax invoices are issued automatically upon subscription activation.
+              </p>
+              <p>
+                <strong className="text-white block mb-0.5">5. Operator & Intellectual Property:</strong>
+                StyleFleet is engineered and powered by <strong className="text-white">TecStellar Technologies</strong> (<a href="https://tecstellar.com" target="_blank" rel="noopener noreferrer" className="text-[#D4AF37] underline">tecstellar.com</a>). All intellectual property rights are reserved. Support hotline: <strong>+91 88705 00106</strong>.
               </p>
             </div>
             <div className="pt-2 text-right">
