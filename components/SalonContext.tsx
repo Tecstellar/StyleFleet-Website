@@ -1703,6 +1703,10 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   );
 };
 
+export const useSalonSafe = () => {
+  return useContext(SalonContext) || null;
+};
+
 export const useSalon = () => {
   const context = useContext(SalonContext);
   if (!context) {

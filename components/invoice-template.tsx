@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useSalon, type Bill, type ShopProfile } from '@/components/SalonContext';
+import { useSalonSafe, type Bill, type ShopProfile } from '@/components/SalonContext';
 import { buildOfficialWhatsAppBillMessage, openWhatsAppBill } from '@/lib/salon-helpers';
 
 interface InvoiceTemplateProps {
@@ -167,7 +167,10 @@ export function InvoiceTemplate({
   onEdit,
   onDelete,
 }: InvoiceTemplateProps) {
-  const { role, hasPermission, isDarkMode } = useSalon();
+  const salon = useSalonSafe();
+  const role = salon?.role || 'owner';
+  const hasPermission = salon?.hasPermission || (() => true);
+  const isDarkMode = salon?.isDarkMode || false;
   const canShareBills = role === 'owner' || hasPermission('share_bills');
   const [shareOptionsOpen, setShareOptionsOpen] = React.useState(false);
 

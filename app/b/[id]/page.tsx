@@ -25,7 +25,6 @@ export default function BillPublicPage({ params }: BillPublicPageProps) {
 
         const rawParam = decodeURIComponent(params.id || '');
         const cleanId = rawParam.replace(/\.pdf$/i, '').trim();
-        const prefixId = cleanId.includes('_') ? cleanId.split('_')[0] : cleanId;
 
         if (!cleanId) {
           setErrorMsg('Invalid or missing invoice identifier.');
@@ -33,23 +32,69 @@ export default function BillPublicPage({ params }: BillPublicPageProps) {
           return;
         }
 
-        // 1. Exact match on invoice_number or UUID or prefixId
-        let { data: billRow, error } = await supabase
-          .from('bills')
-          .select('*, bill_items(*), customers(name, phone), staff(name), shops(*)')
-          .or(`invoice_number.eq."${cleanId}",id.eq."${cleanId}",invoice_number.eq."${prefixId}"`)
-          .limit(1)
-          .maybeSingle();
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanId);
+        let billRow: any = null;
 
-        // 2. Fallback prefix ilike match
-        if (!billRow) {
-          const { data: fallbackRow } = await supabase
+        // 1. If cleanId is a valid UUID, query by id directly
+        if (isUuid) {
+          const { data } = await supabase
             .from('bills')
             .select('*, bill_items(*), customers(name, phone), staff(name), shops(*)')
-            .ilike('invoice_number', `%${prefixId}%`)
+            .eq('id', cleanId)
             .limit(1)
             .maybeSingle();
-          billRow = fallbackRow;
+          billRow = data;
+        }
+
+        // 2. Query by invoice_number variants
+        if (!billRow) {
+          // Check for trailing short UUID suffix (e.g. "INV-1_784b" -> base="INV-1", shortId="784b")
+          const trailingShortMatch = cleanId.match(/^(.*?)(?:_([a-f0-9]{4,8}))$/i);
+          const baseNumber = trailingShortMatch ? trailingShortMatch[1] : cleanId;
+          const shortId = trailingShortMatch ? trailingShortMatch[2] : null;
+
+          const candidates = Array.from(new Set([
+            cleanId,
+            baseNumber,
+            baseNumber.replace(/_/g, '-'),
+            baseNumber.replace(/-/g, '_'),
+            cleanId.replace(/_/g, '-'),
+          ])).filter(Boolean);
+
+          for (const cand of candidates) {
+            const { data } = await supabase
+              .from('bills')
+              .select('*, bill_items(*), customers(name, phone), staff(name), shops(*)')
+              .eq('invoice_number', cand)
+              .limit(1)
+              .maybeSingle();
+            if (data) {
+              billRow = data;
+              break;
+            }
+          }
+
+          // 3. If shortId is available, search by UUID prefix
+          if (!billRow && shortId) {
+            const { data } = await supabase
+              .from('bills')
+              .select('*, bill_items(*), customers(name, phone), staff(name), shops(*)')
+              .ilike('id', `${shortId}%`)
+              .limit(1)
+              .maybeSingle();
+            if (data) billRow = data;
+          }
+
+          // 4. Fallback ilike search on invoice_number
+          if (!billRow && baseNumber) {
+            const { data } = await supabase
+              .from('bills')
+              .select('*, bill_items(*), customers(name, phone), staff(name), shops(*)')
+              .ilike('invoice_number', `%${baseNumber}%`)
+              .limit(1)
+              .maybeSingle();
+            if (data) billRow = data;
+          }
         }
 
         if (!billRow) {
