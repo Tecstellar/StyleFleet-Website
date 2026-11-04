@@ -1206,23 +1206,23 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Bottom Row: Made for Salons & Admin Link */}
-              <div className="border-t border-white/10 pt-6 pb-2 flex flex-col items-center justify-center gap-3 text-center">
-                <p className="text-xs font-bold text-slate-400 tracking-wide flex items-center justify-center gap-1.5 select-none">
+              {/* Bottom Row: Made for Salons on Left & Admin Link on Opposite Side */}
+              <div className="border-t border-white/10 pt-6 pb-2 flex items-center justify-between text-xs">
+                <p className="text-xs font-bold text-slate-400 tracking-wide flex items-center gap-1.5 select-none m-0">
                   <span className="text-[#D4AF37]">✦</span> Made for Salons <span className="text-[#D4AF37]">✦</span>
                 </p>
 
-                {/* Single Word Admin Link */}
-                <div className="pt-1">
+                {/* Single Word Admin Link on Opposite Side */}
+                <div>
                   <a
                     href="https://stylefleet-admin.tecstellar.com/"
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ textDecoration: 'none' }}
-                    className="text-[11px] font-mono font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-widest lowercase transition-colors select-none"
+                    className="text-xs font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-wider transition-colors select-none"
                     title="StyleFleet Master Admin Portal"
                   >
-                    admin
+                    Admin
                   </a>
                 </div>
               </div>
@@ -1823,8 +1823,8 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="border-t border-white/10 pt-5 pb-2 flex flex-col items-center justify-center gap-2 text-center">
-                <p className="text-xs font-bold text-slate-400 tracking-wide flex items-center justify-center gap-1.5 select-none">
+              <div className="border-t border-white/10 pt-5 pb-2 flex items-center justify-between text-xs">
+                <p className="text-xs font-bold text-slate-400 tracking-wide flex items-center gap-1.5 select-none m-0">
                   <span className="text-[#D4AF37]">✦</span> Made for Salons <span className="text-[#D4AF37]">✦</span>
                 </p>
                 <div>
@@ -1833,10 +1833,10 @@ export default function HomePage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ textDecoration: 'none' }}
-                    className="text-[11px] font-mono font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-widest lowercase transition-colors select-none"
+                    className="text-xs font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-wider transition-colors select-none"
                     title="StyleFleet Master Admin Portal"
                   >
-                    admin
+                    Admin
                   </a>
                 </div>
               </div>
