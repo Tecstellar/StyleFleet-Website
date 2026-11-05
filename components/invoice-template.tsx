@@ -7,6 +7,8 @@ import { buildOfficialWhatsAppBillMessage, openWhatsAppBill } from '@/lib/salon-
 interface InvoiceTemplateProps {
   bill: Bill;
   shopProfile: ShopProfile;
+  pdfStorageUrl?: string;
+  pdfFileName?: string;
   onClose?: () => void;
   onShareWhatsApp?: () => void;
   onEdit?: () => void;
@@ -162,6 +164,8 @@ function printInvoiceSinglePage(elementId: string) {
 export function InvoiceTemplate({
   bill,
   shopProfile,
+  pdfStorageUrl,
+  pdfFileName,
   onClose,
   onShareWhatsApp,
   onEdit,
@@ -273,50 +277,87 @@ export function InvoiceTemplate({
     try {
       setIsGeneratingPdf(true);
       const cleanInv = (bill.id || '').replace(/\.pdf$/i, '').trim();
-      const directPdf = `https://stylefleet.tecstellar.com/b/${encodeURIComponent(cleanInv)}.pdf`;
+      const filename = `Invoice_${cleanInv || 'Receipt'}.pdf`;
 
-      // Check if already in Supabase storage
+      const triggerDownloadBlob = (blob: Blob, name: string) => {
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = name;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          try {
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(blobUrl);
+          } catch {}
+        }, 15000);
+      };
+
+      // 1. Check Supabase storage candidates for pre-rendered PDF
+      const storageBase = 'https://nqwgxkdpwpgqkezaqsrx.supabase.co/storage/v1/object/public/invoices/';
+      const candidates: string[] = [];
+      if (pdfStorageUrl) candidates.push(pdfStorageUrl);
+      if (pdfFileName) candidates.push(`${storageBase}${encodeURIComponent(pdfFileName)}`);
+      candidates.push(`${storageBase}${encodeURIComponent(cleanInv)}.pdf`);
+
+      for (const cand of candidates) {
+        try {
+          const resp = await fetch(cand);
+          if (resp.ok) {
+            const ct = resp.headers.get('content-type') || '';
+            if (ct.includes('pdf') || ct.includes('octet-stream')) {
+              const blob = await resp.blob();
+              if (blob.size > 500) {
+                triggerDownloadBlob(blob, filename);
+                return;
+              }
+            }
+          }
+        } catch {}
+      }
+
+      // 2. Fetch binary stream directly from server download endpoint
       try {
-        const check = await fetch(directPdf, { method: 'HEAD' });
-        if (check.ok) {
-          window.open(directPdf, '_blank');
-          return;
+        const res = await fetch(`/api/invoices/download?id=${encodeURIComponent(cleanInv)}&billId=${encodeURIComponent(bill.id || '')}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            shopId: shopProfile.id,
+            billId: bill.id,
+            invoiceNumber: cleanInv,
+            customerName: bill.cust || 'Client',
+            customerPhone: bill.phone || '',
+            stylist: bill.staff || 'Stylist',
+            staff: bill.staff || 'Stylist',
+            items: (bill.items || []).map((it) => ({
+              ...it,
+              staff: it.staff || bill.staff || 'Stylist',
+            })),
+            subtotal: itemsSubtotal,
+            discount: discountAmount,
+            tax: taxAmount,
+            total: bill.total,
+            paidAmount: bill.paidAmount,
+            dueAmount: bill.dueAmount,
+            paymentMethod: bill.mode || 'UPI',
+            issuedAt: bill.createdAt || bill.dateStr,
+            shopProfile,
+          }),
+        });
+
+        if (res.ok) {
+          const blob = await res.blob();
+          if (blob.size > 500) {
+            triggerDownloadBlob(blob, filename);
+            return;
+          }
         }
       } catch {}
 
-      // If not yet uploaded, trigger generate and open
-      const res = await fetch('/api/invoices/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          shopId: shopProfile.id,
-          billId: bill.id,
-          invoiceNumber: cleanInv,
-          customerName: bill.cust || 'Client',
-          customerPhone: bill.phone || '',
-          stylist: bill.staff || 'Stylist',
-          staff: bill.staff || 'Stylist',
-          items: (bill.items || []).map((it) => ({
-            ...it,
-            staff: it.staff || bill.staff || 'Stylist',
-          })),
-          subtotal: itemsSubtotal,
-          discount: discountAmount,
-          tax: taxAmount,
-          total: bill.total,
-          paidAmount: bill.paidAmount,
-          dueAmount: bill.dueAmount,
-          paymentMethod: bill.mode || 'UPI',
-          issuedAt: bill.createdAt || bill.dateStr,
-          shopProfile,
-        }),
-      });
-      const data = await res.json();
-      if (data.success && data.pdfUrl) {
-        window.open(data.pdfUrl, '_blank');
-      } else {
-        window.print();
-      }
+      // 3. Fallback: navigate directly to server download endpoint with attachment header
+      window.location.href = `/api/invoices/download?id=${encodeURIComponent(cleanInv)}&billId=${encodeURIComponent(bill.id || '')}`;
     } catch {
       window.print();
     } finally {

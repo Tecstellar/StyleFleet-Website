@@ -14,6 +14,8 @@ interface BillPublicPageProps {
 export default function BillPublicPage({ params }: BillPublicPageProps) {
   const [bill, setBill] = useState<Bill | null>(null);
   const [shopProfile, setShopProfile] = useState<ShopProfile | null>(null);
+  const [pdfStorageUrl, setPdfStorageUrl] = useState<string | undefined>();
+  const [pdfFileName, setPdfFileName] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -169,6 +171,25 @@ export default function BillPublicPage({ params }: BillPublicPageProps) {
 
         setBill(mappedBill);
         setShopProfile(mappedShop);
+
+        // Derive storage candidates for high-speed direct download
+        let filenameCandidate = '';
+        if (billRow.pdf_url) {
+          filenameCandidate = billRow.pdf_url.split('/').pop()?.split('?')[0] || '';
+        }
+        if (!filenameCandidate && rawParam.endsWith('.pdf')) {
+          filenameCandidate = rawParam;
+        }
+        if (!filenameCandidate && cleanId) {
+          const shortId = billRow.id ? billRow.id.replace(/-/g, '').slice(0, 4) : '';
+          filenameCandidate = shortId ? `${billRow.invoice_number || cleanId}_${shortId}.pdf` : `${cleanId}.pdf`;
+        }
+
+        if (filenameCandidate) {
+          setPdfFileName(filenameCandidate);
+          setPdfStorageUrl(`https://nqwgxkdpwpgqkezaqsrx.supabase.co/storage/v1/object/public/invoices/${encodeURIComponent(filenameCandidate)}`);
+        }
+
         setLoading(false);
       } catch (err: any) {
         console.error('Error fetching public bill:', err);
@@ -217,6 +238,8 @@ export default function BillPublicPage({ params }: BillPublicPageProps) {
         <InvoiceTemplate
           bill={bill}
           shopProfile={shopProfile}
+          pdfStorageUrl={pdfStorageUrl}
+          pdfFileName={pdfFileName}
         />
       </div>
     </div>
