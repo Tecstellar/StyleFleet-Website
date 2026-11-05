@@ -212,44 +212,6 @@ export default function BillPublicPage({ params }: BillPublicPageProps) {
 
   return (
     <div className="min-h-screen bg-[#0F172A] flex flex-col items-center py-4 sm:py-8 px-2 sm:px-4">
-      {/* Top Floating App Bar */}
-      <div className="no-print w-full max-w-3xl flex items-center justify-between mb-4 px-2">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-[#D4AF37]/15 border border-[#D4AF37]/40 text-[#D4AF37] flex items-center justify-center font-black text-xs">
-            SF
-          </div>
-          <div>
-            <span className="text-xs font-black text-white block">StyleFleet Verified Invoice</span>
-            <span className="text-[10px] text-slate-400 block">{shopProfile.shopName}</span>
-          </div>
-        </div>
-
-        {/* Desktop Web Action Buttons (Hidden on mobile) */}
-        <div className="hidden sm:flex items-center gap-2">
-          {shopProfile.phone && (
-            <button
-              onClick={() => window.open(`tel:+91${shopProfile.phone}`)}
-              className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-              <span>Call Salon</span>
-            </button>
-          )}
-
-          <button
-            onClick={() => window.print()}
-            className="px-3.5 py-1.5 rounded-xl bg-[#D4AF37] hover:bg-[#C59F2E] text-[#0B1F44] text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
-          >
-            <svg className="w-3.5 h-3.5 text-[#0B1F44]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-            </svg>
-            <span>Save PDF / Print</span>
-          </button>
-        </div>
-      </div>
-
       {/* The Printable Official Luxury Invoice Template */}
       <div className="w-full max-w-3xl">
         <InvoiceTemplate
