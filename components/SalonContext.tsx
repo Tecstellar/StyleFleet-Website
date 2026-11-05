@@ -127,6 +127,12 @@ export interface BillItem {
   staff?: string;
 }
 
+export interface BillPayment {
+  amount_minor: number;
+  method: string;
+  paid_at?: string;
+}
+
 export interface Bill {
   id: string;
   cust: string;
@@ -154,6 +160,7 @@ export interface Bill {
   deletedBy?: string;
   reminderStatus?: 'Not Sent' | 'Sent' | 'Pending';
   confirmationStatus?: 'Pending' | 'Confirmed';
+  payments?: BillPayment[];
 }
 
 export interface Expense {

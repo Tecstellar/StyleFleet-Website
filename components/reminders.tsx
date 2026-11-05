@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useSalon } from '@/components/SalonContext';
+import { getSalesMetrics } from '@/lib/financial-metrics';
 
 export const RemindersView: React.FC = () => {
   const {
@@ -73,21 +74,15 @@ export const RemindersView: React.FC = () => {
     return bills.filter((b) => !b.isDeleted && (b.isToday || b.dateStr === todayIso));
   }, [bills, todayIso]);
 
-  const todayGrossInflow = useMemo(() => {
-    return todayBills.reduce((acc, b) => acc + (b.paidAmount || 0), 0);
-  }, [todayBills]);
+  const salesMetrics = useMemo(() => {
+    return getSalesMetrics('Day', bills);
+  }, [bills]);
 
-  const todayCashInflow = useMemo(() => {
-    return todayBills.filter((b) => b.mode === 'Cash').reduce((acc, b) => acc + (b.paidAmount || 0), 0);
-  }, [todayBills]);
-
-  const todayUpiInflow = useMemo(() => {
-    return todayBills.filter((b) => b.mode === 'UPI').reduce((acc, b) => acc + (b.paidAmount || 0), 0);
-  }, [todayBills]);
-
-  const todayCardInflow = useMemo(() => {
-    return todayBills.filter((b) => b.mode === 'Card').reduce((acc, b) => acc + (b.paidAmount || 0), 0);
-  }, [todayBills]);
+  const todayGrossInflow = salesMetrics.today_revenue;
+  const todayInvoicesCount = salesMetrics.today_invoices_count;
+  const todayCashInflow = salesMetrics.paymentTotals.Cash;
+  const todayUpiInflow = salesMetrics.paymentTotals.UPI;
+  const todayCardInflow = salesMetrics.paymentTotals.Card;
 
   const todayExpenses = useMemo(() => {
     return expenses
@@ -129,7 +124,7 @@ export const RemindersView: React.FC = () => {
     const summaryText = encodeURIComponent(
       `*${shopProfile.shopName} - 9:00 PM DAY CLOSING AUDIT*\n` +
       `Date: ${todayIso}\n\n` +
-      `• Total Invoices: ${todayBills.length}\n` +
+      `• Total Invoices: ${todayInvoicesCount}\n` +
       `• Total Inflow: ₹${todayGrossInflow}\n` +
       `  - UPI: ₹${todayUpiInflow}\n` +
       `  - Cash: ₹${todayCashInflow}\n` +
@@ -485,7 +480,7 @@ export const RemindersView: React.FC = () => {
               Today Bills
             </span>
             <strong className={`text-lg font-black block mt-1 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-              {todayBills.length}
+              {todayInvoicesCount}
             </strong>
             <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold">Invoices Generated</span>
           </div>

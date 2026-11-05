@@ -857,6 +857,12 @@ export async function fetchSalonDataFromDb(shopId: string): Promise<DatabaseSalo
         isYesterday,
         createdAt: b.created_at || b.issued_at,
         customerId: b.customer_id || b.customers?.id || undefined,
+        notes: b.notes || '',
+        payments: payments.map((p: any) => ({
+          amount_minor: p.amount_minor || 0,
+          method: p.method || 'UPI',
+          paid_at: p.paid_at || p.created_at || b.created_at,
+        })),
       };
     });
 

@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useSalon, Bill } from '@/components/SalonContext';
 import { AnimatedCounter } from '@/components/animated-counter';
 import { buildOfficialWhatsAppBillMessage, openWhatsAppBill, matchStaffName, getMostlyUsedServices } from '@/lib/salon-helpers';
+import { getSalesMetrics } from '@/lib/financial-metrics';
 import { InvoiceTemplate } from '@/components/invoice-template';
 import { StylistMultiSelect } from '@/components/stylist-multi-select';
 
@@ -471,20 +472,29 @@ export function SalesAndBillsView({
     return b.total || 0;
   };
 
-  // Target Day Analytics Computations (Only Confirmed bills enter into revenue metrics)
+  const salesMetrics = useMemo(() => {
+    if (salesOption === 'month') return getSalesMetrics('Month', effectiveBills);
+    if (salesOption === 'week') return getSalesMetrics('Week', effectiveBills);
+    if (salesOption === 'today') return getSalesMetrics('Day', effectiveBills);
+    return null;
+  }, [salesOption, effectiveBills]);
+
+  // Target Day Analytics Computations (strictly matches mobile app metrics)
   const targetRevenue = useMemo(() => {
+    if (salesMetrics) return salesMetrics.today_revenue;
     return targetBills
       .filter((b) => b.confirmationStatus !== 'Pending')
       .reduce((acc, b) => acc + getBillRevenue(b), 0);
-  }, [targetBills]);
+  }, [salesMetrics, targetBills]);
 
   const priorRevenue = useMemo(() => {
+    if (salesMetrics) return Math.round(salesMetrics.prev_minor / 100);
     return priorBills
       .filter((b) => b.confirmationStatus !== 'Pending')
       .reduce((acc, b) => acc + getBillRevenue(b), 0);
-  }, [priorBills]);
+  }, [salesMetrics, priorBills]);
 
-  const targetCount = targetBills.length;
+  const targetCount = salesMetrics ? salesMetrics.today_invoices_count : targetBills.length;
   const priorCount = priorBills.length;
 
   const revenueDiff = targetRevenue - priorRevenue;

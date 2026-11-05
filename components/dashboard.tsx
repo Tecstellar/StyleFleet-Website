@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { useSalon, Bill, Appointment } from '@/components/SalonContext';
 import { AnimatedCounter } from '@/components/animated-counter';
 import { matchStaffName } from '@/lib/salon-helpers';
+import { getSalesMetrics } from '@/lib/financial-metrics';
 
 interface DashboardProps {
   onOpenNewBooking: () => void;
@@ -214,19 +215,18 @@ export function DashboardView({ onOpenNewBooking, onBookAgain, onViewInvoice }: 
   // Today's bills
   const todayBills = effectiveBills.filter((b) => isBillToday(b));
 
-  // Filter out debt clearance receipts (DUE-CLR-*) from service billing revenue so collecting past debt does not double-count revenue
+  // Single Source of Truth for Financial Sales Metrics (100% exact parity with StyleFleet Mobile App)
+  const salesMetrics = useMemo(() => {
+    return getSalesMetrics('Day', effectiveBills);
+  }, [effectiveBills]);
+
+  const todayRevenueNumber = salesMetrics.today_revenue;
+  const todayBillsCount = salesMetrics.today_invoices_count;
+
+  // Filter out debt clearance receipts (DUE-CLR-*) from service billing revenue
   const serviceBills = effectiveBills.filter((b) => !b.isDeleted && !b.id.startsWith('DUE-CLR-'));
   const todayServiceBills = todayBills.filter((b) => !b.isDeleted && !b.id.startsWith('DUE-CLR-'));
 
-  // Metrics Calculation: takes full bill total (e.g. ₹1000 service with ₹500 paid and ₹500 due records ₹1000 total revenue and ₹500 pending due)
-  const totalRevenueNumber = serviceBills.reduce(
-    (acc, b) => acc + (b.total || 0),
-    0
-  );
-  const todayRevenueNumber = todayServiceBills.reduce(
-    (acc, b) => acc + (b.total || 0),
-    0
-  );
   // Outstanding dues: accurately calculated without double-counting bills and customers
   const totalPendingDues = useMemo(() => {
     if (isStylist) {
@@ -489,7 +489,7 @@ export function DashboardView({ onOpenNewBooking, onBookAgain, onViewInvoice }: 
             <AnimatedCounter value={todayRevenueNumber} prefix="₹ " />
           </span>
           <span className={`text-xs mt-1 block ${isDarkMode ? 'text-emerald-400' : 'text-emerald-700'}`}>
-            <AnimatedCounter value={todayBills.length} suffix={isStylist ? " chair bills today" : " bills today"} />
+            <AnimatedCounter value={todayBillsCount} suffix={isStylist ? " chair bills today" : " bills today"} />
           </span>
         </div>
 
@@ -512,11 +512,11 @@ export function DashboardView({ onOpenNewBooking, onBookAgain, onViewInvoice }: 
             {kpiLabels.todayBills}
           </span>
           <span className={`text-2xl font-bold mt-1 block tabular-nums tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-            <AnimatedCounter value={todayBills.length} />
+            <AnimatedCounter value={todayBillsCount} />
           </span>
           <span className={`text-xs mt-1 block ${isDarkMode ? 'text-sky-400' : 'text-sky-700'}`}>
             <AnimatedCounter
-              value={todayBills.length ? Math.round(todayRevenueNumber / todayBills.length) : 0}
+              value={todayBillsCount ? Math.round(todayRevenueNumber / todayBillsCount) : 0}
               prefix="Avg ₹ "
               suffix=" per bill"
             />
