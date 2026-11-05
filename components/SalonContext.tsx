@@ -207,7 +207,7 @@ interface SalonContextType {
   markCustomerInactive: (id: string) => void;
   reactivateCustomer: (id: string) => void;
   importCustomers: (custs: Array<{ name: string; phone: string; vip?: boolean; due?: number; notes?: string; lastVisit?: string }>) => Promise<number>;
-  settleCustomerDue: (cust: Customer, paymentAmount: number, paymentMode: 'Cash' | 'UPI' | 'Card') => Promise<void>;
+  settleCustomerDue: (cust: Customer, paymentAmount: number, paymentMode: 'Cash' | 'UPI' | 'Card', clearAllRemainingDues?: boolean) => Promise<void>;
 
   staff: StaffMember[];
   addStaff: (member: { name: string; phone: string; role?: string }) => void;
@@ -1023,11 +1023,13 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const settleCustomerDue = async (
     cust: Customer,
     paymentAmount: number,
-    paymentMode: 'Cash' | 'UPI' | 'Card'
+    paymentMode: 'Cash' | 'UPI' | 'Card',
+    clearAllRemainingDues: boolean = false
   ) => {
-    const payment = Math.min(cust.due || 0, Math.max(0, paymentAmount));
-    if (payment <= 0) return;
-    const newDue = (cust.due || 0) - payment;
+    const payment = Math.max(0, paymentAmount);
+    if (payment <= 0 && !clearAllRemainingDues) return;
+    const isClearingAll = clearAllRemainingDues || payment >= (cust.due || 0);
+    const newDue = isClearingAll ? 0 : Math.max(0, (cust.due || 0) - payment);
     const collectorName = role === 'stylist' && loggedInStaffName ? `${loggedInStaffName} (Supervisor)` : (shopProfile?.ownerName || 'Owner');
 
     // 1. Immediately update customer in state
@@ -1046,7 +1048,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     setBills((prev) =>
       prev.map((b) => {
-        if (remaining <= 0 || (b.dueAmount || 0) <= 0 || b.isDeleted) return b;
+        if ((b.dueAmount || 0) <= 0 || b.isDeleted) return b;
         const cleanBPhone = (b.phone || '').replace(/\D/g, '').slice(-10);
         const bCustName = (b.cust || '').trim().toLowerCase();
         const matches =
@@ -1055,17 +1057,28 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           (targetName && bCustName && targetName === bCustName);
 
         if (matches) {
-          const deduct = Math.min(b.dueAmount || 0, remaining);
-          remaining -= deduct;
-          const updatedDue = (b.dueAmount || 0) - deduct;
-          const updatedPaid = (b.paidAmount || 0) + deduct;
-          return {
-            ...b,
-            dueAmount: updatedDue,
-            paidAmount: updatedPaid,
-            status: updatedDue <= 0 ? 'paid' : 'partially_paid',
-            isEdited: true,
-          };
+          if (isClearingAll) {
+            return {
+              ...b,
+              dueAmount: 0,
+              paidAmount: b.total,
+              status: 'paid',
+              isEdited: true,
+            };
+          }
+          if (remaining > 0) {
+            const deduct = Math.min(b.dueAmount || 0, remaining);
+            remaining -= deduct;
+            const updatedDue = (b.dueAmount || 0) - deduct;
+            const updatedPaid = (b.paidAmount || 0) + deduct;
+            return {
+              ...b,
+              dueAmount: updatedDue,
+              paidAmount: updatedPaid,
+              status: updatedDue <= 0 ? 'paid' : 'partially_paid',
+              isEdited: true,
+            };
+          }
         }
         return b;
       })
@@ -1100,11 +1113,12 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         { id: cust.id, name: cust.name, phone: cust.phone, currentDue: cust.due || 0 },
         payment,
         paymentMode,
-        collectorName
+        collectorName,
+        isClearingAll
       );
     }
 
-    showToast(`Received ₹${payment} via ${paymentMode}. Remaining Due: ₹${newDue}`);
+    showToast(`Received ₹${payment} via ${paymentMode}. ${isClearingAll ? 'All dues cleared! Remaining: ₹0' : `Remaining Due: ₹${newDue}`}`);
   };
 
   const [expenses, setExpenses] = useState<Expense[]>([]);

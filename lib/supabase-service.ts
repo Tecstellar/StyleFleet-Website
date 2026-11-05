@@ -748,9 +748,22 @@ export async function fetchSalonDataFromDb(shopId: string): Promise<DatabaseSalo
       let deletedBy: string | undefined = undefined;
       let deletedAt: string | undefined = undefined;
 
+      let parsedDueMinor = (b.due_amount_minor !== null && b.due_amount_minor !== undefined && b.due_amount_minor > 0)
+        ? b.due_amount_minor
+        : 0;
+      let parsedPaidMinor = b.paid_amount_minor;
+
       if (b.notes) {
         const parts = b.notes.split(';');
         for (const p of parts) {
+          if (p.startsWith('due:')) {
+            const dVal = parseInt(p.replace('due:', '').trim(), 10);
+            if (!isNaN(dVal)) parsedDueMinor = dVal;
+          }
+          if (p.startsWith('paid:')) {
+            const pVal = parseInt(p.replace('paid:', '').trim(), 10);
+            if (!isNaN(pVal)) parsedPaidMinor = pVal;
+          }
           if (p.startsWith('staff_name:')) {
             const sn = p.replace('staff_name:', '').trim();
             if (sn) parsedStaff = sn;
@@ -809,21 +822,34 @@ export async function fetchSalonDataFromDb(shopId: string): Promise<DatabaseSalo
       const payments = (b.payments as any[]) || [];
       const paymentMode = payments[0]?.method || (b.notes?.includes('Cash') ? 'Cash' : (b.notes?.includes('Card') ? 'Card' : 'UPI'));
 
+      const totalMinor = b.total_minor || 0;
+      const totalAmount = Math.round(totalMinor / 100);
+      const dueAmount = Math.round(parsedDueMinor / 100);
+      const paidAmount = parsedPaidMinor !== null && parsedPaidMinor !== undefined
+        ? Math.round(parsedPaidMinor / 100)
+        : Math.max(0, totalAmount - dueAmount);
+
+      const billStatus: Bill['status'] = dueAmount <= 0
+        ? 'paid'
+        : paidAmount > 0
+        ? 'partially_paid'
+        : 'pending';
+
       return {
         id: b.invoice_number || b.id,
         cust: parsedCust,
         phone: parsedPhone,
         dateStr,
-        items: items.length > 0 ? items : [{ name: 'Salon Service', price: Math.round((b.total_minor || 0) / 100), qty: 1 }],
+        items: items.length > 0 ? items : [{ name: 'Salon Service', price: totalAmount, qty: 1 }],
         staff: parsedStaff,
-        total: Math.round((b.total_minor || 0) / 100),
-        paidAmount: Math.round((b.paid_amount_minor ?? b.total_minor ?? 0) / 100),
-        dueAmount: Math.round((b.due_amount_minor || 0) / 100),
+        total: totalAmount,
+        paidAmount,
+        dueAmount,
         discount: Math.round((b.discount_minor || 0) / 100),
         tax: Math.round((b.tax_minor || 0) / 100),
         tip: Math.round((b.tip_minor || 0) / 100),
         mode: paymentMode,
-        status: (b.status as Bill['status']) || 'paid',
+        status: billStatus,
         isDeleted: b.status === 'deleted' || !!b.deleted_at,
         deletedAt: deletedAt || (b.status === 'deleted' ? b.updated_at : undefined),
         deletedBy: deletedBy || (b.status === 'deleted' ? parsedStaff : undefined),
@@ -849,11 +875,14 @@ export async function fetchSalonDataFromDb(shopId: string): Promise<DatabaseSalo
         statsByCustomer.set(key, { visits: 0, spend: 0, dues: 0, lastVisit: 'Today' });
       }
       const st = statsByCustomer.get(key)!;
-      // Requirement 7: visits = Total count of non-deleted bills where status = 'paid' or due_amount_minor = 0
+      // Requirement 7: visits = Total count of non-deleted bills where status = 'paid' or dueAmount = 0
       if (b.status === 'paid' || (b.dueAmount || 0) <= 0) {
         st.visits += 1;
       }
-      st.spend += b.paidAmount || 0;
+      // Only count non-clearance bills towards client lifetime spend so debt payments do not artificially inflate spend
+      if (!b.id.startsWith('DUE-CLR-')) {
+        st.spend += b.paidAmount || 0;
+      }
       st.dues += b.dueAmount || 0;
       st.lastVisit = b.dateStr ? b.dateStr.split(',')[0] : 'Today';
     }
@@ -867,9 +896,10 @@ export async function fetchSalonDataFromDb(shopId: string): Promise<DatabaseSalo
       const dbDue = (c.outstanding_due_minor !== undefined && c.outstanding_due_minor !== null)
         ? Math.round(Number(c.outstanding_due_minor) / 100)
         : null;
-      // If customer record in Supabase has an explicit outstanding_due_minor set (via mobile or web settlement),
-      // that is the authoritative source of truth. Otherwise, fallback to live bill dues.
-      const liveDue = dbDue !== null ? dbDue : (liveStats ? liveStats.dues : 0);
+      // Live bill dues strictly prioritized so newly created mobile bills with due in notes immediately reflect on customer
+      const liveDue = (liveStats && liveStats.dues > 0)
+        ? liveStats.dues
+        : (dbDue !== null && dbDue > 0 ? dbDue : (dbDue || 0));
       const lastVisit = (liveStats && liveStats.visits > 0) ? liveStats.lastVisit : 'Never';
 
       return {
@@ -886,51 +916,7 @@ export async function fetchSalonDataFromDb(shopId: string): Promise<DatabaseSalo
       };
     });
 
-    // Reconcile bills if customer due has been settled or partially cleared in Supabase
-    const customerDuePool = new Map<string, number>();
-    for (const c of custRows || []) {
-      if (c.outstanding_due_minor !== undefined && c.outstanding_due_minor !== null) {
-        const dueVal = Math.max(0, Math.round(Number(c.outstanding_due_minor) / 100));
-        customerDuePool.set(c.id, dueVal);
-        const cleanP = (c.phone || '').replace(/\D/g, '').slice(-10);
-        if (cleanP) customerDuePool.set(cleanP, dueVal);
-        if (c.name) customerDuePool.set(c.name.toLowerCase().trim(), dueVal);
-      }
-    }
-
-    const reconciledBills = bills.map((b) => {
-      if (!b.dueAmount || b.dueAmount <= 0) return b;
-      const cleanPhone = (b.phone || '').replace(/\D/g, '').slice(-10);
-      const custKey = (b.customerId && customerDuePool.has(b.customerId))
-        ? b.customerId
-        : (cleanPhone && customerDuePool.has(cleanPhone))
-        ? cleanPhone
-        : (b.cust && customerDuePool.has(b.cust.toLowerCase().trim()))
-        ? b.cust.toLowerCase().trim()
-        : null;
-
-      if (custKey !== null) {
-        const poolRemaining = customerDuePool.get(custKey) ?? 0;
-        if (poolRemaining <= 0) {
-          return {
-            ...b,
-            dueAmount: 0,
-            paidAmount: b.total,
-            status: 'paid' as const,
-          };
-        } else {
-          const alloc = Math.min(b.dueAmount, poolRemaining);
-          customerDuePool.set(custKey, poolRemaining - alloc);
-          return {
-            ...b,
-            dueAmount: alloc,
-            paidAmount: Math.max(0, b.total - alloc),
-            status: alloc < b.total ? ('partially_paid' as const) : ('pending' as const),
-          };
-        }
-      }
-      return b;
-    });
+    const reconciledBills = bills;
 
     // 8. Fetch expenses
     const { data: expRows } = await supabase
@@ -1254,15 +1240,19 @@ export async function reconcileCustomerDueInDb(
     // Fetch all active (non-deleted, non-paid) bills for this customer in Supabase
     let billsQuery = supabase
       .from('bills')
-      .select('due_amount_minor, status')
+      .select('due_amount_minor, status, notes')
       .eq('shop_id', shopId)
       .neq('status', 'deleted')
       .neq('status', 'paid');
 
     if (customerId) {
-      billsQuery = billsQuery.eq('customer_id', customerId);
+      if (cleanPhone) {
+        billsQuery = billsQuery.or(`customer_id.eq.${customerId},notes.ilike.%phone:${cleanPhone}%`);
+      } else {
+        billsQuery = billsQuery.eq('customer_id', customerId);
+      }
     } else if (cleanPhone) {
-      billsQuery = billsQuery.ilike('notes', `%${cleanPhone}%`);
+      billsQuery = billsQuery.ilike('notes', `%phone:${cleanPhone}%`);
     }
 
     const { data: activeBills, error } = await billsQuery;
@@ -1272,7 +1262,12 @@ export async function reconcileCustomerDueInDb(
     }
 
     const totalDueMinor = (activeBills || []).reduce((sum, b) => {
-      return sum + Math.max(0, b.due_amount_minor || 0);
+      let dMinor = b.due_amount_minor || 0;
+      if (dMinor === 0 && b.notes) {
+        const m = b.notes.match(/due:(\d+)/);
+        if (m) dMinor = parseInt(m[1], 10);
+      }
+      return sum + Math.max(0, dMinor);
     }, 0);
 
     // Update customer in database with exact mathematical sum
@@ -2159,14 +2154,15 @@ export async function settleCustomerDueInDb(
   customer: { id: string; name: string; phone: string; currentDue: number },
   paymentAmount: number,
   paymentMode: 'Cash' | 'UPI' | 'Card',
-  collectorName: string
+  collectorName: string,
+  clearAllRemainingDues: boolean = false
 ): Promise<{ success: boolean; newDue: number }> {
   try {
     const payment = Math.max(0, paymentAmount);
-    if (payment <= 0) return { success: false, newDue: customer.currentDue };
+    if (payment <= 0 && !clearAllRemainingDues) return { success: false, newDue: customer.currentDue };
 
     const cleanPhone = (customer.phone || '').replace(/\D/g, '').slice(-10);
-    const newDue = Math.max(0, (customer.currentDue || 0) - payment);
+    const newDue = clearAllRemainingDues ? 0 : Math.max(0, (customer.currentDue || 0) - payment);
     const newDueMinor = Math.round(newDue * 100);
     const paymentMinor = Math.round(payment * 100);
     const nowIso = new Date().toISOString();
@@ -2194,7 +2190,8 @@ export async function settleCustomerDueInDb(
       .from('bills')
       .select('id, invoice_number, total_minor, paid_amount_minor, due_amount_minor, status, notes')
       .eq('shop_id', shopId)
-      .gt('due_amount_minor', 0)
+      .neq('status', 'deleted')
+      .neq('status', 'paid')
       .order('created_at', { ascending: true });
 
     if (isValidUuid(customer.id)) {
@@ -2209,18 +2206,40 @@ export async function settleCustomerDueInDb(
     let remainingToDeductMinor = paymentMinor;
     if (unpaidBills && unpaidBills.length > 0) {
       for (const b of unpaidBills) {
-        if (remainingToDeductMinor <= 0) break;
-        const currentBillDueMinor = b.due_amount_minor || 0;
-        const currentBillPaidMinor = b.paid_amount_minor || 0;
-        const deductMinor = Math.min(currentBillDueMinor, remainingToDeductMinor);
-        remainingToDeductMinor -= deductMinor;
+        if (!clearAllRemainingDues && newDueMinor > 0 && remainingToDeductMinor <= 0) break;
+        let currentBillDueMinor = typeof b.due_amount_minor === 'number' && b.due_amount_minor > 0
+          ? b.due_amount_minor
+          : 0;
+        if (currentBillDueMinor === 0 && b.notes && b.notes.includes('due:')) {
+          const m = b.notes.match(/due:(\d+)/);
+          if (m) currentBillDueMinor = parseInt(m[1], 10);
+        }
+        if (currentBillDueMinor === 0 && b.status !== 'paid') {
+          currentBillDueMinor = Math.max(0, (b.total_minor || 0) - (b.paid_amount_minor || 0));
+        }
+        if (currentBillDueMinor <= 0) continue;
 
-        const updatedBillDueMinor = currentBillDueMinor - deductMinor;
-        const updatedBillPaidMinor = currentBillPaidMinor + deductMinor;
-        const updatedStatus = updatedBillDueMinor <= 0 ? 'paid' : 'partially_paid';
+        const currentBillPaidMinor = b.paid_amount_minor || 0;
+        let deductMinor = 0;
+        let updatedBillDueMinor = 0;
+        let updatedBillPaidMinor = 0;
+        let updatedStatus: 'paid' | 'partially_paid' = 'paid';
+
+        if (clearAllRemainingDues || newDueMinor === 0) {
+          deductMinor = currentBillDueMinor;
+          updatedBillDueMinor = 0;
+          updatedBillPaidMinor = b.total_minor || (currentBillPaidMinor + currentBillDueMinor);
+          updatedStatus = 'paid';
+        } else {
+          deductMinor = Math.min(currentBillDueMinor, remainingToDeductMinor);
+          remainingToDeductMinor -= deductMinor;
+          updatedBillDueMinor = currentBillDueMinor - deductMinor;
+          updatedBillPaidMinor = currentBillPaidMinor + deductMinor;
+          updatedStatus = updatedBillDueMinor <= 0 ? 'paid' : 'partially_paid';
+        }
 
         // Clean out old due/paid tags and format notes with mobile-compatible due/paid tags and [Edited] marker
-        let existingNotes = (b.notes || '').replace(/due:\d+;?/g, '').replace(/paid:\d+;?/g, '').trim();
+        let existingNotes = (b.notes || '').replace(/due:\d+;?/g, '').replace(/paid:\d+;?/g, '').replace(/\[Edited\];?/g, '').trim();
         const updatedNotes = `due:${updatedBillDueMinor};paid:${updatedBillPaidMinor};${existingNotes}${existingNotes.endsWith(';') ? '' : ';'}clearance_paid:${deductMinor};[Edited];`;
 
         await supabase
@@ -2248,8 +2267,17 @@ export async function settleCustomerDueInDb(
         } catch {}
       }
 
-      // Authoritatively ensure customer's outstanding_due_minor strictly reflects active unpaid bills
-      await reconcileCustomerDueInDb(shopId, customer.id || cleanPhone);
+      if (clearAllRemainingDues || newDueMinor === 0) {
+        let custZeroQuery = supabase
+          .from('customers')
+          .update({ outstanding_due_minor: 0, updated_at: nowIso })
+          .eq('shop_id', shopId);
+        if (isValidUuid(customer.id)) custZeroQuery = custZeroQuery.eq('id', customer.id);
+        else if (cleanPhone) custZeroQuery = custZeroQuery.eq('phone', cleanPhone);
+        await custZeroQuery;
+      } else {
+        await reconcileCustomerDueInDb(shopId, customer.id || cleanPhone);
+      }
     }
 
     // 3. Insert clearance receipt bill into bills table

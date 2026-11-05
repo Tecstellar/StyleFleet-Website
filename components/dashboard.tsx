@@ -214,24 +214,28 @@ export function DashboardView({ onOpenNewBooking, onBookAgain, onViewInvoice }: 
   // Today's bills
   const todayBills = effectiveBills.filter((b) => isBillToday(b));
 
-  // Metrics Calculation: strictly from real database records with zero artificial additions
-  const totalRevenueNumber = effectiveBills.reduce(
-    (acc, b) => acc + (b.paidAmount !== undefined ? b.paidAmount : (b.status === 'pending' ? 0 : b.total || 0)),
+  // Filter out debt clearance receipts (DUE-CLR-*) from service billing revenue so collecting past debt does not double-count revenue
+  const serviceBills = effectiveBills.filter((b) => !b.isDeleted && !b.id.startsWith('DUE-CLR-'));
+  const todayServiceBills = todayBills.filter((b) => !b.isDeleted && !b.id.startsWith('DUE-CLR-'));
+
+  // Metrics Calculation: takes full bill total (e.g. ₹1000 service with ₹500 paid and ₹500 due records ₹1000 total revenue and ₹500 pending due)
+  const totalRevenueNumber = serviceBills.reduce(
+    (acc, b) => acc + (b.total || 0),
     0
   );
-  const todayRevenueNumber = todayBills.reduce(
-    (acc, b) => acc + (b.paidAmount !== undefined ? b.paidAmount : (b.status === 'pending' ? 0 : b.total || 0)),
+  const todayRevenueNumber = todayServiceBills.reduce(
+    (acc, b) => acc + (b.total || 0),
     0
   );
   // Outstanding dues: accurately calculated without double-counting bills and customers
   const totalPendingDues = useMemo(() => {
     if (isStylist) {
-      return todayBills.reduce((acc, b) => acc + Math.max(0, b.dueAmount || 0), 0);
+      return todayServiceBills.reduce((acc, b) => acc + Math.max(0, b.dueAmount || 0), 0);
     }
     const customerDues = customers.reduce((acc, c) => acc + Math.max(0, c.due || 0), 0);
-    const billDues = effectiveBills.filter((b) => !b.isDeleted).reduce((acc, b) => acc + Math.max(0, b.dueAmount || 0), 0);
-    return customerDues > 0 ? customerDues : billDues;
-  }, [isStylist, todayBills, effectiveBills, customers]);
+    const billDues = serviceBills.reduce((acc, b) => acc + Math.max(0, b.dueAmount || 0), 0);
+    return Math.max(customerDues, billDues);
+  }, [isStylist, todayServiceBills, serviceBills, customers]);
   const confirmedAppointments = effectiveAppointments.filter((a) => a.status === 'Confirmed');
 
   // Curated repeat clients dynamically derived from real customer database:

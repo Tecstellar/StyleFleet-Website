@@ -75,6 +75,7 @@ export function CustomersView({ onOpenAddClientModal }: CustomersProps) {
   const [settlingDueCust, setSettlingDueCust] = useState<Customer | null>(null);
   const [settleAmount, setSettleAmount] = useState<number>(0);
   const [settleMode, setSettleMode] = useState<'Cash' | 'UPI' | 'Card'>('Cash');
+  const [clearAllDues, setClearAllDues] = useState<boolean>(true);
 
   // Manual Add Form State
   const [formName, setFormName] = useState('');
@@ -381,13 +382,13 @@ export function CustomersView({ onOpenAddClientModal }: CustomersProps) {
       return;
     }
     const currentDue = settlingDueCust.due || 0;
-    const payment = Math.min(currentDue, Math.max(0, Number(settleAmount)));
-    if (payment <= 0) {
+    const payment = Math.max(0, Number(settleAmount));
+    if (payment <= 0 && !clearAllDues) {
       showToast('Please enter a valid payment amount.', 'error');
       return;
     }
 
-    await settleCustomerDue(settlingDueCust, payment, settleMode);
+    await settleCustomerDue(settlingDueCust, payment, settleMode, clearAllDues);
     setSettlingDueCust(null);
   };
 
@@ -2062,7 +2063,7 @@ export function CustomersView({ onOpenAddClientModal }: CustomersProps) {
               <div className="text-right">
                 <span className="text-[10px] font-bold text-slate-400 block">Remaining Due</span>
                 <span className="text-lg font-black text-[#D4AF37]">
-                  ₹{Math.max(0, (settlingDueCust.due || 0) - (Number(settleAmount) || 0))}
+                  ₹{clearAllDues ? 0 : Math.max(0, (settlingDueCust.due || 0) - (Number(settleAmount) || 0))}
                 </span>
               </div>
             </div>
@@ -2073,13 +2074,18 @@ export function CustomersView({ onOpenAddClientModal }: CustomersProps) {
                 <label className={`text-xs font-black ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>
                   Amount Paid Now (₹)
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setSettleAmount(settlingDueCust.due || 0)}
-                  className="text-[10px] font-bold text-[#D4AF37] hover:underline cursor-pointer"
-                >
-                  Pay Full (₹{settlingDueCust.due})
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettleAmount(settlingDueCust.due || 0);
+                      setClearAllDues(true);
+                    }}
+                    className="text-[10px] font-bold text-[#D4AF37] hover:underline cursor-pointer"
+                  >
+                    Pay Full (₹{settlingDueCust.due})
+                  </button>
+                </div>
               </div>
               <div className="relative">
                 <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-black text-[#D4AF37]">
@@ -2087,11 +2093,10 @@ export function CustomersView({ onOpenAddClientModal }: CustomersProps) {
                 </span>
                 <input
                   type="number"
-                  min="1"
-                  max={settlingDueCust.due || 0}
+                  min="0"
                   value={settleAmount === 0 ? '' : settleAmount}
                   onChange={(e) => setSettleAmount(Math.max(0, Number(e.target.value)))}
-                  placeholder="Enter amount paid"
+                  placeholder="Enter amount paid (e.g. 150, 200, or full)"
                   className={`w-full pl-8 pr-3.5 py-2.5 rounded-xl border text-sm font-black outline-none transition-colors ${
                     isDarkMode
                       ? 'bg-[#0B1F44] border-[#2A3858] text-white focus:border-[#D4AF37]'
@@ -2100,11 +2105,32 @@ export function CustomersView({ onOpenAddClientModal }: CustomersProps) {
                   autoFocus
                 />
               </div>
-              <p className={`text-[10px] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                {settleAmount < (settlingDueCust.due || 0)
-                  ? `Partial Payment: ₹${settleAmount} will be added to today's revenue, remaining ₹${Math.max(0, (settlingDueCust.due || 0) - settleAmount)} remains in credit due.`
-                  : `Full Clearance: ₹${settleAmount} will be added to today's revenue and the client's balance will be fully cleared.`}
-              </p>
+
+              {/* Clear All Dues Checkbox Toggle */}
+              <label className={`flex items-start gap-2.5 p-2.5 rounded-xl border cursor-pointer transition-colors ${
+                clearAllDues
+                  ? 'bg-amber-500/10 border-amber-500/40'
+                  : isDarkMode
+                  ? 'bg-[#0B1F44] border-[#2A3858]'
+                  : 'bg-slate-50 border-slate-200'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={clearAllDues}
+                  onChange={(e) => setClearAllDues(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded text-[#D4AF37] focus:ring-0 cursor-pointer accent-[#D4AF37]"
+                />
+                <div className="flex-1">
+                  <span className={`text-xs font-bold block ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    Clear all client dues completely (₹0 remaining)
+                  </span>
+                  <span className={`text-[10px] block leading-tight ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {clearAllDues
+                      ? `Accept ₹${settleAmount || 0} and write off any remaining debt so mobile & web show ₹0 balance.`
+                      : `Only deduct ₹${settleAmount || 0}, leaving remaining ₹${Math.max(0, (settlingDueCust.due || 0) - (Number(settleAmount) || 0))} in credit.`}
+                  </span>
+                </div>
+              </label>
             </div>
 
             {/* Payment Mode Selector: Cash / GPay / UPI / Card */}

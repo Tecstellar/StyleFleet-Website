@@ -465,9 +465,10 @@ export function SalesAndBillsView({
     return effectiveBills.filter((b) => isBillInDateRange(b, activeRange.prior.start, activeRange.prior.end));
   }, [effectiveBills, activeRange]);
 
-  // Helper: strictly get how much was actually paid on the bill (excluding unpaid pending due)
+  // Helper: total bill value for service revenue, excluding debt clearance receipts
   const getBillRevenue = (b: Bill) => {
-    return b.paidAmount !== undefined ? b.paidAmount : (b.status === 'pending' ? 0 : b.total || 0);
+    if (b.id.startsWith('DUE-CLR-')) return 0;
+    return b.total || 0;
   };
 
   // Target Day Analytics Computations (Only Confirmed bills enter into revenue metrics)
