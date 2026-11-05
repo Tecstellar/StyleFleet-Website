@@ -352,10 +352,10 @@ export function InvoiceTemplate({
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* ================= SCREEN-ONLY ACTION TOOLBAR ================= */}
+      {/* ================= SCREEN-ONLY ACTION TOOLBAR (Hidden in Public Customer View) ================= */}
       {(onEdit || onDelete || onClose) && (
         <div
-          className={`no-print hidden sm:flex w-full max-w-3xl items-center justify-between mb-3 px-3.5 py-2.5 rounded-2xl border backdrop-blur-md transition-colors shadow-lg ${
+          className={`no-print w-full max-w-3xl flex items-center justify-between mb-3 px-3.5 py-2.5 rounded-2xl border backdrop-blur-md transition-colors shadow-lg ${
             isDarkMode
               ? 'bg-[#121B33]/95 border-[#2A3858] text-white'
               : 'bg-white border-slate-300 text-slate-900'
@@ -363,7 +363,7 @@ export function InvoiceTemplate({
         >
           <div className="flex items-center gap-2">
             <span className={`text-xs font-black tracking-tight ${isDarkMode ? 'text-slate-200' : 'text-slate-900'}`}>
-              Invoice · #{bill.id}
+              Invoice Preview · #{bill.id}
             </span>
             {bill.isEdited && (
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/40">
@@ -416,18 +416,19 @@ export function InvoiceTemplate({
                     ? 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-white'
                     : 'bg-slate-100 hover:bg-slate-200 border-slate-400 text-slate-800 hover:text-black'
                 }`}
-                title="Close"
+                title="Close Invoice Preview"
                 aria-label="Close"
               >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-              <span>Close</span>
-            </button>
-          )}
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+                <span>Close</span>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ================= PRINTABLE LUXURY INVOICE SHEET ================= */}
       <div
@@ -880,34 +881,103 @@ export function InvoiceTemplate({
           </p>
         </div>
 
-        {/* 8. SCREEN-ONLY BOTTOM TOOLBAR: Download PDF option */}
-        <div className="no-print p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-center gap-3">
-          <button
-            type="button"
-            disabled={isGeneratingPdf}
-            onClick={handleDownloadPdf}
-            className="flex-1 max-w-md py-3 px-6 rounded-xl bg-[#D4AF37] hover:bg-[#C59F2E] text-[#0B1F44] font-black text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg transition-transform active:scale-95 disabled:opacity-60"
-            title="Download Official Invoice as PDF"
-          >
-            {isGeneratingPdf ? (
-              <span className="w-4 h-4 border-2 border-[#0B1F44] border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <svg className="w-4 h-4 text-[#0B1F44]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            )}
-            <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}</span>
-          </button>
-          {onClose && (
+        {/* 8. SCREEN-ONLY BOTTOM TOOLBAR: Download PDF option for both web and mobile */}
+        {!(onEdit || onDelete || onClose) ? (
+          <div className="no-print p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-center">
             <button
               type="button"
-              onClick={onClose}
-              className="py-3 px-6 rounded-xl border border-white/30 text-white font-bold text-xs bg-white/10 hover:bg-white/20 cursor-pointer shadow-xs"
+              disabled={isGeneratingPdf}
+              onClick={handleDownloadPdf}
+              className="w-full max-w-sm py-3 px-6 rounded-xl bg-[#D4AF37] hover:bg-[#C59F2E] text-[#0B1F44] font-black text-sm flex items-center justify-center gap-2 cursor-pointer shadow-lg transition-transform active:scale-95 disabled:opacity-50"
+              title="Download Invoice as PDF"
             >
-              Close
+              {isGeneratingPdf ? (
+                <span className="w-4 h-4 border-2 border-[#0B1F44] border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-4 h-4 text-[#0B1F44]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              )}
+              <span>{isGeneratingPdf ? 'Generating PDF...' : 'Download PDF'}</span>
             </button>
-          )}
-        </div>
+          </div>
+        ) : shareOptionsOpen ? (
+          <div className="no-print p-4 bg-slate-900 border-t border-slate-800">
+            <div className="w-full flex items-center justify-between gap-2 animate-fadeIn">
+              <div className="flex items-center gap-2">
+                {canShareBills && (
+                  <button
+                    type="button"
+                    onClick={handleDefaultWhatsAppShare}
+                    className="py-2 px-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                  >
+                    <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+                      <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.694.06-2.131-.538-1.839-.765-3.023-2.627-3.114-2.748-.09-.122-.745-.989-.745-1.895 0-.907.472-1.352.641-1.536.17-.184.37-.23.493-.23.123 0 .247.001.355.006.114.005.267-.043.418.32.155.371.531 1.294.577 1.389.047.094.078.204.016.326-.062.123-.093.2-.185.309-.092.109-.194.244-.277.328-.093.094-.19.196-.082.381.108.185.481.794 1.031 1.285.709.632 1.306.828 1.492.92.185.093.293.078.401-.047.108-.124.463-.54.586-.726.123-.185.247-.154.416-.093.17.062 1.079.509 1.264.601.185.093.308.139.354.216.046.078.046.452-.098.857z" />
+                    </svg>
+                    <span>WhatsApp</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="py-2 px-3.5 rounded-xl bg-[#D4AF37] hover:bg-[#C59F2E] text-[#0B1F44] font-black text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                >
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  <span>Print</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={isGeneratingPdf}
+                  onClick={handleDownloadPdf}
+                  className="py-2 px-3.5 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50"
+                  title="Save or Download Official Invoice as PDF"
+                >
+                  {isGeneratingPdf ? (
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  )}
+                  <span>{isGeneratingPdf ? 'Generating...' : 'PDF'}</span>
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShareOptionsOpen(false)}
+                className="py-2 px-4 rounded-xl border border-white/30 text-white font-bold text-xs bg-white/10 hover:bg-white/20 cursor-pointer shadow-xs"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="no-print p-4 bg-slate-900 border-t border-slate-800">
+            <div className="w-full flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => setShareOptionsOpen(true)}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-[#D4AF37] hover:bg-[#C59F2E] text-[#0B1F44] font-black text-xs flex items-center justify-center gap-2 cursor-pointer shadow-md transition-transform active:scale-95"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+                <span>Share</span>
+              </button>
+              {onClose && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="py-2.5 px-6 rounded-xl border border-white/30 text-white font-bold text-xs bg-white/10 hover:bg-white/20 cursor-pointer shadow-xs"
+                >
+                  Close
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

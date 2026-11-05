@@ -672,8 +672,8 @@ export default function HomePage() {
                       showToast('StyleFleet iOS App is rolling out on the App Store.', 'success');
                     }}
                   >
-                    <svg className="store-icon" viewBox="0 0 170 170" fill="currentColor">
-                      <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.67-7.81-11.96-14.34-5.77-8.7-10.42-18.79-13.97-30.27-3.55-11.48-5.33-22.42-5.33-32.83 0-14.36 3.55-26.33 10.66-35.91 7.11-9.58 16.14-14.43 27.09-14.56 5.34 0 11.27 1.48 17.79 4.43 6.52 2.96 10.74 4.49 12.67 4.49 1.74 0 6.06-1.57 12.96-4.71 6.9-3.14 12.96-4.58 18.18-4.33 13.94.65 24.96 5.86 33.05 15.64-12.19 7.4-18.17 17.51-17.95 30.34.22 10.02 4.13 18.49 11.75 25.43 7.62 6.94 16.75 10.97 27.42 12.09-2.18 6.53-4.91 13.28-8.2 20.25zM119.22 31.84c0-7.72 2.76-14.89 8.28-21.52 5.53-6.63 12.41-10.66 20.65-12.09.22 1.09.33 2.18.33 3.26 0 7.61-2.85 14.86-8.54 21.74-5.69 6.87-12.71 10.87-21.06 12-0.22-1.09-.33-2.18-.33-3.39z" />
+                    <svg className="store-icon" viewBox="0 0 384 512" fill="currentColor">
+                      <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
                     </svg>
                     <div>
                       <span className="store-sub">DOWNLOAD ON THE</span>
@@ -1027,8 +1027,8 @@ export default function HomePage() {
                       showToast('StyleFleet iOS App is rolling out on the App Store.', 'success');
                     }}
                   >
-                    <svg className="store-icon" viewBox="0 0 170 170" fill="#F6EFE2">
-                      <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.67-7.81-11.96-14.34-5.77-8.7-10.42-18.79-13.97-30.27-3.55-11.48-5.33-22.42-5.33-32.83 0-14.36 3.55-26.33 10.66-35.91 7.11-9.58 16.14-14.43 27.09-14.56 5.34 0 11.27 1.48 17.79 4.43 6.52 2.96 10.74 4.49 12.67 4.49 1.74 0 6.06-1.57 12.96-4.71 6.9-3.14 12.96-4.58 18.18-4.33 13.94.65 24.96 5.86 33.05 15.64-12.19 7.4-18.17 17.51-17.95 30.34.22 10.02 4.13 18.49 11.75 25.43 7.62 6.94 16.75 10.97 27.42 12.09-2.18 6.53-4.91 13.28-8.2 20.25zM119.22 31.84c0-7.72 2.76-14.89 8.28-21.52 5.53-6.63 12.41-10.66 20.65-12.09.22 1.09.33 2.18.33 3.26 0 7.61-2.85 14.86-8.54 21.74-5.69 6.87-12.71 10.87-21.06 12-0.22-1.09-.33-2.18-.33-3.39z" />
+                    <svg className="store-icon" viewBox="0 0 384 512" fill="#F6EFE2">
+                      <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
                     </svg>
                     <div>
                       <span className="store-sub" style={{ opacity: 0.85 }}>DOWNLOAD ON THE</span>
@@ -1113,8 +1113,8 @@ export default function HomePage() {
                         showToast('StyleFleet iOS App is rolling out on the App Store.', 'success');
                       }}
                     >
-                      <svg className="store-icon" viewBox="0 0 170 170" fill="currentColor" style={{ width: '22px', height: '22px', flexShrink: 0 }}>
-                        <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.67-7.81-11.96-14.34-5.77-8.7-10.42-18.79-13.97-30.27-3.55-11.48-5.33-22.42-5.33-32.83 0-14.36 3.55-26.33 10.66-35.91 7.11-9.58 16.14-14.43 27.09-14.56 5.34 0 11.27 1.48 17.79 4.43 6.52 2.96 10.74 4.49 12.67 4.49 1.74 0 6.06-1.57 12.96-4.71 6.9-3.14 12.96-4.58 18.18-4.33 13.94.65 24.96 5.86 33.05 15.64-12.19 7.4-18.17 17.51-17.95 30.34.22 10.02 4.13 18.49 11.75 25.43 7.62 6.94 16.75 10.97 27.42 12.09-2.18 6.53-4.91 13.28-8.2 20.25zM119.22 31.84c0-7.72 2.76-14.89 8.28-21.52 5.53-6.63 12.41-10.66 20.65-12.09.22 1.09.33 2.18.33 3.26 0 7.61-2.85 14.86-8.54 21.74-5.69 6.87-12.71 10.87-21.06 12-0.22-1.09-.33-2.18-.33-3.39z" />
+                      <svg className="store-icon" viewBox="0 0 384 512" fill="currentColor" style={{ width: '22px', height: '22px', flexShrink: 0 }}>
+                        <path d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z" />
                       </svg>
                       <div>
                         <span className="store-sub" style={{ fontSize: '0.6rem', display: 'block', lineHeight: 1.1, fontWeight: 700, letterSpacing: '0.06em', opacity: 0.85 }}>
@@ -1206,22 +1206,16 @@ export default function HomePage() {
                     >
                       Terms and Conditions
                     </button>
+                    <a
+                      href="https://stylefleet-admin.tecstellar.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-left text-slate-400 hover:text-white transition-colors underline underline-offset-3 cursor-pointer"
+                    >
+                      Admin Login
+                    </a>
                   </div>
                 </div>
-              </div>
-
-              {/* Bottom Row: Only Admin Link */}
-              <div className="border-t border-white/10 pt-5 pb-2 flex items-center justify-end text-xs">
-                <a
-                  href="https://stylefleet-admin.tecstellar.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ textDecoration: 'none' }}
-                  className="text-xs font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-wider transition-colors select-none"
-                  title="StyleFleet Master Admin Portal"
-                >
-                  Admin
-                </a>
               </div>
             </div>
           </footer>
@@ -1820,37 +1814,31 @@ export default function HomePage() {
                     </a>
                     .
                   </p>
-                  <div className="flex gap-3 text-xs pt-1">
+                  <div className="flex flex-col gap-2 pt-1 text-xs">
                     <button
                       type="button"
                       onClick={() => setShowPrivacyModal(true)}
-                      className="text-slate-400 hover:text-white underline underline-offset-3 cursor-pointer bg-transparent border-0 p-0"
+                      className="text-left text-slate-400 hover:text-white underline underline-offset-3 cursor-pointer bg-transparent border-0 p-0 font-sans"
                     >
                       Privacy Policy
                     </button>
-                    <span>·</span>
                     <button
                       type="button"
                       onClick={() => setShowTermsModal(true)}
-                      className="text-slate-400 hover:text-white underline underline-offset-3 cursor-pointer bg-transparent border-0 p-0"
+                      className="text-left text-slate-400 hover:text-white underline underline-offset-3 cursor-pointer bg-transparent border-0 p-0 font-sans"
                     >
-                      Terms
+                      Terms and Conditions
                     </button>
+                    <a
+                      href="https://stylefleet-admin.tecstellar.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-left text-slate-400 hover:text-white underline underline-offset-3 cursor-pointer font-sans"
+                    >
+                      Admin Login
+                    </a>
                   </div>
                 </div>
-              </div>
-
-              <div className="border-t border-white/10 pt-5 pb-2 flex items-center justify-end text-xs">
-                <a
-                  href="https://stylefleet-admin.tecstellar.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ textDecoration: 'none' }}
-                  className="text-xs font-bold text-slate-500/80 hover:text-[#D4AF37] tracking-wider transition-colors select-none"
-                  title="StyleFleet Master Admin Portal"
-                >
-                  Admin
-                </a>
               </div>
             </div>
           </footer>
