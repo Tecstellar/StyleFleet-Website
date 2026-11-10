@@ -16,7 +16,7 @@ import {
   Laptop
 } from 'lucide-react';
 import { OwnerRegistrationView } from '@/components/owner-registration';
-import { findSalonByPhone } from '@/lib/supabase-service';
+import { findSalonByPhone, establishSupabaseAuthSession } from '@/lib/supabase-service';
 import { supabase } from '@/lib/supabase';
 
 // Service list for the interactive front-desk demo
@@ -580,6 +580,7 @@ export default function HomePage() {
             loginTime: new Date().toISOString(),
           })
         );
+        establishSupabaseAuthSession(cleanPhone, salonName).catch(() => {});
         setTimeout(() => router.push('/dashboard'), 500);
       } else {
         showToast(`No salon registered with +91 ${cleanPhone}. Setting up your new salon workspace!`, 'success');

@@ -30,6 +30,7 @@ export const StaffTeamView: React.FC<StaffTeamViewProps> = ({ onOpenAddStaff }) 
 
   // Modals
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isSubmittingStaff, setIsSubmittingStaff] = useState(false);
   const [showReportPreviewModal, setShowReportPreviewModal] = useState(false);
   const [editingStylist, setEditingStylist] = useState<StaffMember | null>(null);
   const [ratingStylist, setRatingStylist] = useState<StaffMember | null>(null);
@@ -120,8 +121,9 @@ export const StaffTeamView: React.FC<StaffTeamViewProps> = ({ onOpenAddStaff }) 
   }, [filteredBillsByInterval]);
 
   // Handle Add Stylist Submit
-  const handleAddStylistSubmit = (e: React.FormEvent) => {
+  const handleAddStylistSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingStaff) return;
     const cleanMobile = addMobile.replace(/\D/g, '');
     if (!addFullName.trim()) {
       showToast('Please enter the stylist full name.', 'error');
@@ -132,15 +134,24 @@ export const StaffTeamView: React.FC<StaffTeamViewProps> = ({ onOpenAddStaff }) 
       return;
     }
 
-    addStaff({
-      name: addFullName.trim(),
-      phone: cleanMobile,
-      role: 'Stylist',
-    });
+    setIsSubmittingStaff(true);
+    try {
+      const res = await addStaff({
+        name: addFullName.trim(),
+        phone: cleanMobile,
+        role: 'Stylist',
+      });
 
-    setAddFullName('');
-    setAddMobile('');
-    setShowAddModal(false);
+      if (res && res.success === false) {
+        return;
+      }
+
+      setAddFullName('');
+      setAddMobile('');
+      setShowAddModal(false);
+    } finally {
+      setIsSubmittingStaff(false);
+    }
   };
 
   // Open Edit Stylist Modal
@@ -887,9 +898,10 @@ export const StaffTeamView: React.FC<StaffTeamViewProps> = ({ onOpenAddStaff }) 
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-2xl bg-[#D4AF37] hover:bg-[#C59F2E] text-[#0B1F44] text-xs font-black shadow-lg shadow-[#D4AF37]/25 active:scale-95 transition-all cursor-pointer"
+                  disabled={isSubmittingStaff}
+                  className="flex-1 py-2.5 rounded-2xl bg-[#D4AF37] hover:bg-[#C59F2E] text-[#0B1F44] text-xs font-black shadow-lg shadow-[#D4AF37]/25 active:scale-95 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  Save Stylist
+                  {isSubmittingStaff ? 'Saving...' : 'Save Stylist'}
                 </button>
               </div>
             </form>

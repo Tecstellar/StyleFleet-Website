@@ -23,6 +23,7 @@ import {
   saveStaffMemberToDb,
   updateStaffMemberInDb,
   deleteStaffInDb,
+  ensureSupabaseOwnerSession,
   saveServiceToDb,
   updateServiceInDb,
   deleteServiceInDb,
@@ -217,9 +218,9 @@ interface SalonContextType {
   settleCustomerDue: (cust: Customer, paymentAmount: number, paymentMode: 'Cash' | 'UPI' | 'Card', clearAllRemainingDues?: boolean) => Promise<void>;
 
   staff: StaffMember[];
-  addStaff: (member: { name: string; phone: string; role?: string }) => void;
-  updateStaff: (id: string, updated: Partial<StaffMember>) => void;
-  deleteStaff: (id: string) => void;
+  addStaff: (member: { name: string; phone: string; role?: string }) => Promise<{ success: boolean; id?: string; error?: string }>;
+  updateStaff: (id: string, updated: Partial<StaffMember>) => Promise<boolean>;
+  deleteStaff: (id: string) => Promise<boolean>;
   toggleStaffStatus: (id: string) => void;
   inviteStaffViaWhatsApp: (id: string) => void;
 
@@ -706,11 +707,26 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {}
   }, [staff, isHydrated]);
 
-  const addStaff = ({ name, phone, role: staffRole }: { name: string; phone: string; role?: string }) => {
-    const staffId = generateUuid();
+  const addStaff = async ({ name, phone, role: staffRole }: { name: string; phone: string; role?: string }): Promise<{ success: boolean; id?: string; error?: string }> => {
     const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    const staffId = generateUuid();
+    const effectiveShopId =
+      currentShopId ||
+      shopProfile?.id ||
+      (typeof window !== 'undefined' ? localStorage.getItem('stylefleet_shop_id') : null);
+
+    let savedId = staffId;
+    if (effectiveShopId) {
+      const dbId = await saveStaffMemberToDb(effectiveShopId, { id: staffId, name: name.trim(), phone: cleanPhone, role: staffRole });
+      if (!dbId) {
+        showToast(`Could not save stylist "${name}" to the database. Please try again.`, 'error');
+        return { success: false, error: 'Database save failed' };
+      }
+      savedId = dbId;
+    }
+
     const newStaff: StaffMember = {
-      id: staffId,
+      id: savedId,
       name: name.trim(),
       role: staffRole?.trim() || 'Stylist',
       phone: cleanPhone || phone.trim(),
@@ -722,23 +738,23 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       invited: false,
       permissions: ['customers', 'sales', 'appointments', 'reminders'],
     };
-    setStaff((prev) => [...prev, newStaff]);
-    const effectiveShopId =
-      currentShopId ||
-      shopProfile?.id ||
-      (typeof window !== 'undefined' ? localStorage.getItem('stylefleet_shop_id') : null);
-    if (effectiveShopId) {
-      saveStaffMemberToDb(effectiveShopId, { id: staffId, name, phone: cleanPhone, role: staffRole });
-    }
-    showToast(`Stylist "${name}" added to Team!`);
+
+    setStaff((prev) => {
+      if (prev.some((s) => s.id === savedId)) return prev;
+      return [...prev, newStaff];
+    });
+
+    showToast(`Stylist "${name}" added to Team!`, 'success');
+    return { success: true, id: savedId };
   };
 
-  const updateStaff = (id: string, updated: Partial<StaffMember>) => {
+  const updateStaff = async (id: string, updated: Partial<StaffMember>): Promise<boolean> => {
     setStaff((prev) => prev.map((s) => (s.id === id ? { ...s, ...updated } : s)));
     if (currentShopId) {
-      updateStaffMemberInDb(currentShopId, id, updated);
+      await updateStaffMemberInDb(currentShopId, id, updated);
     }
     showToast('Stylist updated successfully.');
+    return true;
   };
 
   const currentStylistMember = useMemo(() => {
@@ -798,24 +814,29 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [role, currentStylistPermissions]
   );
 
-  const deleteStaff = (id: string) => {
+  const deleteStaff = async (id: string): Promise<boolean> => {
     setStaff((prev) => prev.filter((s) => s.id !== id));
     if (currentShopId) {
-      deleteStaffInDb(currentShopId, id);
+      await deleteStaffInDb(currentShopId, id);
     }
     showToast('Stylist removed.');
+    return true;
   };
 
   const toggleStaffStatus = (id: string) => {
+    let nextStatus: 'active' | 'inactive' = 'active';
     setStaff((prev) =>
       prev.map((s) => {
         if (s.id === id) {
-          const next = s.status === 'inactive' ? 'active' : 'inactive';
-          return { ...s, status: next };
+          nextStatus = s.status === 'inactive' ? 'active' : 'inactive';
+          return { ...s, status: nextStatus };
         }
         return s;
       })
     );
+    if (currentShopId) {
+      updateStaffMemberInDb(currentShopId, id, { status: nextStatus });
+    }
     showToast('Stylist status updated.');
   };
 
@@ -1231,6 +1252,7 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (savedShopId) {
         setCurrentShopId(savedShopId);
         setIsLoadingSalonData(true);
+        ensureSupabaseOwnerSession(savedShopId).catch(() => {});
         fetchSalonDataFromDb(savedShopId)
           .then((dbData) => {
             if (!dbData) {
