@@ -928,6 +928,12 @@
   flex-wrap: wrap;
 }
 
+.landing-exact footer.footer-luxury .wrap,
+footer.footer-luxury .wrap {
+  display: block !important;
+  width: 100% !important;
+}
+
 .landing-exact footer a {
   text-decoration: underline;
   text-underline-offset: 3px;

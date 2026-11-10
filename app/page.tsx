@@ -1043,7 +1043,7 @@ export default function HomePage() {
 
           {/* ================= COMPREHENSIVE LUXURY FOOTER ================= */}
           <footer className="footer-luxury border-t border-white/10 bg-[#071329]/95 text-slate-300 py-12">
-            <div className="wrap max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 w-full">
               {/* Top Section: 3 Balanced Columns */}
               <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 pb-10">
                 {/* Column 1: Brand Logo, Description & App Store Buttons */}
@@ -1243,12 +1243,12 @@ export default function HomePage() {
               </div>
 
               {/* Bottom Center: Powered by Tecstellar & Copyright */}
-              <div className="pt-8 border-t border-white/10 flex flex-col items-center justify-center gap-3 text-center">
+              <div className="pt-8 mt-2 border-t border-white/10 w-full flex flex-col items-center justify-center gap-3 text-center mx-auto">
                 <a
                   href="https://tecstellar.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/[0.03] border border-white/10 hover:border-[#D4AF37]/50 hover:bg-white/[0.07] transition-all group shadow-sm"
+                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2 rounded-full bg-white/[0.03] border border-white/10 hover:border-[#D4AF37]/50 hover:bg-white/[0.07] transition-all group shadow-sm mx-auto"
                   style={{ textDecoration: 'none' }}
                 >
                   <span className="text-[11px] font-medium text-slate-400 group-hover:text-slate-200 transition-colors tracking-wider uppercase">
@@ -1260,7 +1260,7 @@ export default function HomePage() {
                     className="h-5 sm:h-5.5 w-auto object-contain transition-transform group-hover:scale-105"
                   />
                 </a>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-400 text-center w-full">
                   © 2026 StyleFleet. All rights reserved.
                 </p>
               </div>
@@ -1791,7 +1791,7 @@ export default function HomePage() {
 
           {/* ================= COMPREHENSIVE LUXURY FOOTER (LOGIN VIEW) ================= */}
           <footer className="footer-luxury border-t border-white/10 bg-[#071329]/95 text-slate-300 py-10 mt-12">
-            <div className="wrap max-w-6xl mx-auto px-4 sm:px-6">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 w-full">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-8">
                 <div className="md:col-span-6 space-y-3">
                   <div className="flex items-center gap-2.5">
@@ -1907,12 +1907,12 @@ export default function HomePage() {
               </div>
 
               {/* Bottom Center: Powered by Tecstellar & Copyright */}
-              <div className="pt-8 border-t border-white/10 flex flex-col items-center justify-center gap-3 text-center">
+              <div className="pt-8 mt-2 border-t border-white/10 w-full flex flex-col items-center justify-center gap-3 text-center mx-auto">
                 <a
                   href="https://tecstellar.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/[0.03] border border-white/10 hover:border-[#D4AF37]/50 hover:bg-white/[0.07] transition-all group shadow-sm"
+                  className="inline-flex items-center justify-center gap-2.5 px-4 py-2 rounded-full bg-white/[0.03] border border-white/10 hover:border-[#D4AF37]/50 hover:bg-white/[0.07] transition-all group shadow-sm mx-auto"
                   style={{ textDecoration: 'none' }}
                 >
                   <span className="text-[11px] font-medium text-slate-400 group-hover:text-slate-200 transition-colors tracking-wider uppercase">
@@ -1924,7 +1924,7 @@ export default function HomePage() {
                     className="h-5 sm:h-5.5 w-auto object-contain transition-transform group-hover:scale-105"
                   />
                 </a>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-400 text-center w-full">
                   © 2026 StyleFleet. All rights reserved.
                 </p>
               </div>
