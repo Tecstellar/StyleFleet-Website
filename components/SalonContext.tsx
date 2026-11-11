@@ -618,11 +618,15 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setCustomers((prev) =>
       prev.map((c) => (c.id === id ? { ...c, ...updated } : c))
     );
-    if (currentShopId) {
+    const effectiveShopId =
+      currentShopId ||
+      shopProfile?.id ||
+      (typeof window !== 'undefined' ? localStorage.getItem('stylefleet_shop_id') : null);
+    if (effectiveShopId) {
       const identifier = (existing && isValidUuid(existing.id))
         ? existing.id
         : (existing?.phone || updated.phone || existing?.name || id);
-      updateCustomerInDb(currentShopId, identifier, {
+      updateCustomerInDb(effectiveShopId, identifier, {
         ...updated,
         phone: updated.phone || existing?.phone,
         name: updated.name || existing?.name,
@@ -633,25 +637,51 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const deleteCustomer = (id: string) => {
     setCustomers((prev) => prev.filter((c) => c.id !== id));
-    if (currentShopId) {
-      deleteCustomerInDb(currentShopId, id);
+    const effectiveShopId =
+      currentShopId ||
+      shopProfile?.id ||
+      (typeof window !== 'undefined' ? localStorage.getItem('stylefleet_shop_id') : null);
+    if (effectiveShopId) {
+      deleteCustomerInDb(effectiveShopId, id);
     }
     showToast('Client permanently deleted from CRM');
   };
 
-  const markCustomerInactive = (id: string) => {
+  const setCustomerActiveStatus = (id: string, nextStatus: 'active' | 'inactive') => {
+    const target = customers.find((c) => c.id === id);
+    const hasInactiveTag = nextStatus === 'active' && (target?.notes || '').includes('[inactive]');
+    const cleanedNotes = hasInactiveTag ? target!.notes!.replace(/\[inactive\]\s*/g, '').trim() : undefined;
+
     setCustomers((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, status: 'inactive' } : c))
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, status: nextStatus, ...(cleanedNotes !== undefined ? { notes: cleanedNotes } : {}) }
+          : c
+      )
     );
-    showToast('Client moved to Inactive records');
+
+    const effectiveShopId =
+      currentShopId ||
+      shopProfile?.id ||
+      (typeof window !== 'undefined' ? localStorage.getItem('stylefleet_shop_id') : null);
+    if (effectiveShopId) {
+      updateCustomerInDb(
+        effectiveShopId,
+        id,
+        { status: nextStatus, ...(cleanedNotes !== undefined ? { notes: cleanedNotes } : {}) },
+        target ? { phone: target.phone, name: target.name } : undefined
+      );
+    }
+    showToast(
+      nextStatus === 'inactive'
+        ? `${target?.name || 'Client'} moved to Inactive records`
+        : `${target?.name || 'Client'} reactivated to Active CRM!`
+    );
   };
 
-  const reactivateCustomer = (id: string) => {
-    setCustomers((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, status: 'active' } : c))
-    );
-    showToast('Client reactivated to Active CRM!');
-  };
+  const markCustomerInactive = (id: string) => setCustomerActiveStatus(id, 'inactive');
+
+  const reactivateCustomer = (id: string) => setCustomerActiveStatus(id, 'active');
 
   const importCustomers = async (
     newClients: Array<{ name: string; phone: string; vip?: boolean; due?: number; notes?: string; lastVisit?: string }>

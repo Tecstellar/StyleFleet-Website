@@ -1049,7 +1049,6 @@ export function CustomersView({ onOpenAddClientModal }: CustomersProps) {
                             setOpenDetailMenu(false);
                             markCustomerInactive(historyCust.id);
                             setHistoryCust((prev) => prev ? ({ ...prev, status: 'inactive' }) : null);
-                            showToast(`Marked ${historyCust.name} as inactive`);
                           }}
                           className="w-full px-2.5 py-2 rounded-lg hover:bg-amber-500/15 text-left text-xs font-semibold text-amber-400 flex items-center gap-2 transition-colors cursor-pointer"
                         >
@@ -1065,7 +1064,6 @@ export function CustomersView({ onOpenAddClientModal }: CustomersProps) {
                             setOpenDetailMenu(false);
                             reactivateCustomer(historyCust.id);
                             setHistoryCust((prev) => prev ? ({ ...prev, status: 'active' }) : null);
-                            showToast(`Reactivated ${historyCust.name}`);
                           }}
                           className="w-full px-2.5 py-2 rounded-lg hover:bg-emerald-500/15 text-left text-xs font-semibold text-emerald-400 flex items-center gap-2 transition-colors cursor-pointer"
                         >
@@ -1459,7 +1457,6 @@ export function CustomersView({ onOpenAddClientModal }: CustomersProps) {
                   onClick={() => {
                     reactivateCustomer(historyCust.id);
                     setHistoryCust((prev) => prev ? ({ ...prev, status: 'active' }) : null);
-                    showToast(`Reactivated ${historyCust.name}`);
                   }}
                   className="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                 >
@@ -1474,7 +1471,6 @@ export function CustomersView({ onOpenAddClientModal }: CustomersProps) {
                   onClick={() => {
                     markCustomerInactive(historyCust.id);
                     setHistoryCust((prev) => prev ? ({ ...prev, status: 'inactive' }) : null);
-                    showToast(`Marked ${historyCust.name} as inactive`);
                   }}
                   className="flex-1 py-2.5 rounded-xl bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/40 text-amber-400 font-extrabold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                 >

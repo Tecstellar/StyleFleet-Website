@@ -988,7 +988,7 @@ export async function fetchSalonDataFromDb(shopId: string): Promise<DatabaseSalo
         due: liveDue,
         notes: c.notes || '',
         lastVisit,
-        status: c.is_active ? 'active' : 'inactive',
+        status: (c.is_active !== false && !(c.notes || '').includes('[inactive]')) ? 'active' : 'inactive',
       };
     });
 
@@ -1250,7 +1250,16 @@ export async function updateCustomerInDb(
         .eq('id', customerIdOrPhone)
         .select('id');
 
-      if (!error && data && data.length > 0) return true;
+      if (!error && data && data.length > 0) {
+        if (updated.status !== undefined && cleanPhone && cleanPhone.length === 10) {
+          await supabase
+            .from('customers')
+            .update({ is_active: payload.is_active, updated_at: payload.updated_at })
+            .eq('shop_id', shopId)
+            .eq('phone', cleanPhone);
+        }
+        return true;
+      }
 
       // Fallback by phone if local UUID differed from DB row (e.g. deduplicated insert)
       if (cleanPhone && cleanPhone.length >= 7) {
