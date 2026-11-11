@@ -961,7 +961,6 @@ export function CustomersView({ onOpenAddClientModal }: CustomersProps) {
                   onClick={() => {
                     toggleCustomerVip(historyCust.id);
                     setHistoryCust((prev) => prev ? ({ ...prev, vip: !prev.vip }) : null);
-                    showToast(historyCust.vip ? `Removed VIP status from ${historyCust.name}` : `Marked ${historyCust.name} as VIP!`);
                   }}
                   className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-transform active:scale-95 cursor-pointer ${
                     historyCust.vip

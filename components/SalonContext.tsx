@@ -473,18 +473,18 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleServiceActive = (id: string) => {
-    let nextActive = false;
+    const target = services.find((s) => s.id === id);
+    if (!target) return;
+    const nextActive = !target.active;
     setServices((prev) =>
-      prev.map((s) => {
-        if (s.id === id) {
-          nextActive = !s.active;
-          return { ...s, active: nextActive };
-        }
-        return s;
-      })
+      prev.map((s) => (s.id === id ? { ...s, active: nextActive } : s))
     );
-    if (currentShopId) {
-      toggleServiceActiveInDb(currentShopId, id, nextActive);
+    const effectiveShopId =
+      currentShopId ||
+      shopProfile?.id ||
+      (typeof window !== 'undefined' ? localStorage.getItem('stylefleet_shop_id') : null);
+    if (effectiveShopId) {
+      toggleServiceActiveInDb(effectiveShopId, id, nextActive);
     }
   };
 
@@ -578,27 +578,37 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       shopProfile?.id ||
       (typeof window !== 'undefined' ? localStorage.getItem('stylefleet_shop_id') : null);
     if (effectiveShopId) {
-      saveCustomerToDb(effectiveShopId, newCust);
+      saveCustomerToDb(effectiveShopId, newCust).then((savedId) => {
+        if (savedId && savedId !== custId) {
+          setCustomers((prev) =>
+            prev.map((c) => (c.id === custId ? { ...c, id: savedId } : c))
+          );
+        }
+      });
     }
     showToast(`Client "${name}" added to CRM!`);
     return newCust;
   };
 
   const toggleCustomerVip = (id: string) => {
-    let toggledVip = false;
+    const target = customers.find((c) => c.id === id);
+    if (!target) return;
+    const newVip = !target.vip;
     setCustomers((prev) =>
-      prev.map((c) => {
-        if (c.id === id) {
-          const newVip = !c.vip;
-          toggledVip = newVip;
-          showToast(newVip ? `⭐ ${c.name} marked as VIP / MVP!` : `${c.name} removed from VIP`);
-          return { ...c, vip: newVip };
-        }
-        return c;
-      })
+      prev.map((c) => (c.id === id ? { ...c, vip: newVip } : c))
     );
-    if (currentShopId) {
-      updateCustomerInDb(currentShopId, id, { vip: toggledVip });
+    showToast(newVip ? `⭐ ${target.name} marked as VIP / MVP!` : `${target.name} removed from VIP`);
+    const effectiveShopId =
+      currentShopId ||
+      shopProfile?.id ||
+      (typeof window !== 'undefined' ? localStorage.getItem('stylefleet_shop_id') : null);
+    if (effectiveShopId) {
+      updateCustomerInDb(
+        effectiveShopId,
+        id,
+        { vip: newVip },
+        { phone: target.phone, name: target.name }
+      );
     }
   };
 
@@ -824,18 +834,18 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleStaffStatus = (id: string) => {
-    let nextStatus: 'active' | 'inactive' = 'active';
+    const target = staff.find((s) => s.id === id);
+    if (!target) return;
+    const nextStatus: 'active' | 'inactive' = target.status === 'inactive' ? 'active' : 'inactive';
     setStaff((prev) =>
-      prev.map((s) => {
-        if (s.id === id) {
-          nextStatus = s.status === 'inactive' ? 'active' : 'inactive';
-          return { ...s, status: nextStatus };
-        }
-        return s;
-      })
+      prev.map((s) => (s.id === id ? { ...s, status: nextStatus } : s))
     );
-    if (currentShopId) {
-      updateStaffMemberInDb(currentShopId, id, { status: nextStatus });
+    const effectiveShopId =
+      currentShopId ||
+      shopProfile?.id ||
+      (typeof window !== 'undefined' ? localStorage.getItem('stylefleet_shop_id') : null);
+    if (effectiveShopId) {
+      updateStaffMemberInDb(effectiveShopId, id, { status: nextStatus });
     }
     showToast('Stylist status updated.');
   };

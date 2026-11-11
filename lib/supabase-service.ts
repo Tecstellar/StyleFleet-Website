@@ -1219,37 +1219,73 @@ export async function bulkSaveCustomersToDb(
 export async function updateCustomerInDb(
   shopId: string,
   customerIdOrPhone: string,
-  updated: Partial<Customer>
+  updated: Partial<Customer>,
+  lookupHint?: { phone?: string; name?: string }
 ): Promise<boolean> {
   try {
     const payload: Record<string, any> = {
       updated_at: new Date().toISOString(),
     };
     if (updated.name !== undefined) payload.name = updated.name.trim();
-    if (updated.phone !== undefined) payload.phone = updated.phone.trim();
+    if (updated.phone !== undefined) payload.phone = updated.phone.replace(/\D/g, '').slice(-10) || updated.phone.trim();
     if (updated.vip !== undefined) payload.is_starred = !!updated.vip;
     if (updated.due !== undefined) payload.outstanding_due_minor = Math.round(Number(updated.due) * 100);
     if (updated.notes !== undefined) payload.notes = updated.notes?.trim() || null;
     if (updated.status !== undefined) payload.is_active = updated.status === 'active';
 
-    let query = supabase.from('customers').update(payload).eq('shop_id', shopId);
+    await ensureSupabaseOwnerSession(shopId);
+
+    const rawHintPhone = lookupHint?.phone || updated.phone || '';
+    const rawDigits = customerIdOrPhone.replace(/\D/g, '');
+    const cleanPhone =
+      (rawHintPhone ? rawHintPhone.replace(/\D/g, '').slice(-10) : '') ||
+      (!customerIdOrPhone.startsWith('c-') && rawDigits.length >= 7 ? rawDigits.slice(-10) : '');
+
     if (isValidUuid(customerIdOrPhone)) {
-      query = query.eq('id', customerIdOrPhone);
-    } else {
-      const rawDigits = customerIdOrPhone.replace(/\D/g, '');
-      const cleanPhone = (updated.phone ? updated.phone.replace(/\D/g, '').slice(-10) : '') ||
-        (!customerIdOrPhone.startsWith('c-') && rawDigits.length >= 7 ? rawDigits.slice(-10) : '');
+      const { data, error } = await supabase
+        .from('customers')
+        .update(payload)
+        .eq('shop_id', shopId)
+        .eq('id', customerIdOrPhone)
+        .select('id');
+
+      if (!error && data && data.length > 0) return true;
+
+      // Fallback by phone if local UUID differed from DB row (e.g. deduplicated insert)
       if (cleanPhone && cleanPhone.length >= 7) {
-        query = query.eq('phone', cleanPhone);
-      } else if (updated.name) {
-        query = query.ilike('name', updated.name.trim());
-      } else {
-        query = query.eq('id', customerIdOrPhone);
+        const { data: phoneData, error: phoneErr } = await supabase
+          .from('customers')
+          .update(payload)
+          .eq('shop_id', shopId)
+          .eq('phone', cleanPhone)
+          .select('id');
+        if (!phoneErr && phoneData && phoneData.length > 0) return true;
       }
+      return false;
     }
 
-    const { error } = await query;
-    return !error;
+    if (cleanPhone && cleanPhone.length >= 7) {
+      const { data, error } = await supabase
+        .from('customers')
+        .update(payload)
+        .eq('shop_id', shopId)
+        .eq('phone', cleanPhone)
+        .select('id');
+      if (!error && data && data.length > 0) return true;
+    }
+
+    const hintName = (lookupHint?.name || updated.name || '').trim();
+    if (hintName) {
+      const { data, error } = await supabase
+        .from('customers')
+        .update(payload)
+        .eq('shop_id', shopId)
+        .ilike('name', hintName)
+        .select('id');
+      return !error && !!data && data.length > 0;
+    }
+
+    return false;
   } catch {
     return false;
   }
