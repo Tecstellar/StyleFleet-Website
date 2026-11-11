@@ -171,6 +171,7 @@ export interface Expense {
   note: string;
   pm: string;
   staff?: string | null;
+  staffId?: string | null;
   inProfit: boolean;
   date: string;
   createdAt?: string;
@@ -1561,40 +1562,61 @@ export const SalonProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {}
   }, [language, isHydrated]);
 
+  const resolveStaffIdByName = (staffName?: string | null): string | null => {
+    const clean = (staffName || '').trim().toLowerCase();
+    if (!clean) return null;
+    return staff.find((s) => s.name.trim().toLowerCase() === clean)?.id || null;
+  };
+
+  const getEffectiveShopId = () =>
+    currentShopId ||
+    shopProfile?.id ||
+    (typeof window !== 'undefined' ? localStorage.getItem('stylefleet_shop_id') : null);
+
   const addExpense = (newExp: Omit<Expense, 'id' | 'date'> & { id?: string; date?: string }) => {
     const today = new Date().toISOString().split('T')[0];
     const expId = isValidUuid(newExp.id) ? newExp.id! : generateUuid();
+    const resolvedStaffId = newExp.staffId !== undefined ? newExp.staffId : resolveStaffIdByName(newExp.staff);
     const exp: Expense = {
       id: expId,
       cat: newExp.cat,
       amount: Number(newExp.amount) || 0,
       note: newExp.note,
       pm: newExp.pm,
-      staff: newExp.staff,
+      staff: newExp.staff || null,
+      staffId: resolvedStaffId,
       inProfit: newExp.inProfit !== undefined ? newExp.inProfit : true,
       date: newExp.date || today,
+      createdAt: newExp.createdAt || new Date().toISOString(),
     };
     setExpenses((prev) => [exp, ...prev]);
-    if (currentShopId) {
-      saveExpenseToDb(currentShopId, exp);
+    const effectiveShopId = getEffectiveShopId();
+    if (effectiveShopId) {
+      saveExpenseToDb(effectiveShopId, exp);
     }
     showToast(`Expense of ₹${exp.amount} recorded.`);
   };
 
   const updateExpense = (id: string, updated: Partial<Expense>) => {
+    const patch: Partial<Expense> = { ...updated };
+    if (updated.staff !== undefined && updated.staffId === undefined) {
+      patch.staffId = resolveStaffIdByName(updated.staff);
+    }
     setExpenses((prev) =>
-      prev.map((e) => (e.id === id ? { ...e, ...updated } : e))
+      prev.map((e) => (e.id === id ? { ...e, ...patch } : e))
     );
-    if (currentShopId) {
-      updateExpenseInDb(currentShopId, id, updated);
+    const effectiveShopId = getEffectiveShopId();
+    if (effectiveShopId) {
+      updateExpenseInDb(effectiveShopId, id, patch);
     }
     showToast('Expense updated successfully.');
   };
 
   const deleteExpense = (id: string) => {
     setExpenses((prev) => prev.filter((e) => e.id !== id));
-    if (currentShopId) {
-      deleteExpenseInDb(currentShopId, id);
+    const effectiveShopId = getEffectiveShopId();
+    if (effectiveShopId) {
+      deleteExpenseInDb(effectiveShopId, id);
     }
     showToast('Expense entry deleted.');
   };

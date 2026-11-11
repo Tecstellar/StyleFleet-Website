@@ -994,24 +994,37 @@ export async function fetchSalonDataFromDb(shopId: string): Promise<DatabaseSalo
 
     const reconciledBills = bills;
 
-    // 8. Fetch expenses
+    // 8. Fetch expenses with linked category and stylist
     const { data: expRows } = await supabase
       .from('expenses')
-      .select('*')
+      .select('*, expense_categories(name), staff(id, name)')
       .eq('shop_id', shopId)
       .order('created_at', { ascending: false });
 
-    const expenses: Expense[] = (expRows || []).map((e) => ({
-      id: e.id,
-      cat: 'Supplies',
-      amount: Math.round((e.amount_minor || 0) / 100),
-      note: e.note || '',
-      pm: e.payment_method || 'UPI',
-      staff: null,
-      inProfit: e.include_in_profit !== false,
-      date: e.expense_date || new Date().toISOString().split('T')[0],
-      createdAt: e.created_at || undefined,
-    }));
+    const staffNameById = new Map<string, string>();
+    for (const st of staff) {
+      if (st.id && st.name) staffNameById.set(st.id, st.name);
+    }
+
+    const expenses: Expense[] = (expRows || []).map((e: any) => {
+      const catName = (e.expense_categories as { name?: string } | null)?.name?.trim() || 'General';
+      const staffName =
+        (e.staff as { name?: string } | null)?.name?.trim() ||
+        (e.staff_id ? staffNameById.get(e.staff_id) || null : null);
+
+      return {
+        id: e.id,
+        cat: catName,
+        amount: Math.round((e.amount_minor || 0) / 100),
+        note: e.note || '',
+        pm: e.payment_method || 'UPI',
+        staff: staffName,
+        staffId: e.staff_id || null,
+        inProfit: e.include_in_profit !== false,
+        date: e.expense_date || new Date().toISOString().split('T')[0],
+        createdAt: e.created_at || undefined,
+      };
+    });
 
     return {
       shop: shopProfile,
@@ -1954,6 +1967,66 @@ export async function updateStaffMemberInDb(
 }
 
 /**
+ * Resolve (or create) an expense_categories row by exact category name so web & app share the same category link.
+ */
+async function resolveExpenseCategoryId(shopId: string, catName?: string): Promise<string | null> {
+  const cleanName = (catName || '').trim();
+  if (!cleanName) return null;
+
+  try {
+    const { data: matching } = await supabase
+      .from('expense_categories')
+      .select('id, shop_id, name')
+      .or(`shop_id.eq.${shopId},shop_id.is.null`)
+      .ilike('name', cleanName);
+
+    if (matching && matching.length > 0) {
+      const shopSpecific = matching.find((c) => c.shop_id === shopId);
+      return (shopSpecific || matching[0]).id;
+    }
+
+    const newCatId = generateUuid();
+    const { data: inserted, error } = await supabase
+      .from('expense_categories')
+      .insert({
+        id: newCatId,
+        shop_id: shopId,
+        name: cleanName,
+        is_active: true,
+      })
+      .select('id')
+      .single();
+
+    if (!error && inserted?.id) return inserted.id;
+  } catch {}
+  return null;
+}
+
+/**
+ * Resolve a stylist's UUID for expense linking (preferring explicit UUID, then matching by name in this shop).
+ */
+async function resolveExpenseStaffId(
+  shopId: string,
+  staffName?: string | null,
+  staffId?: string | null
+): Promise<string | null> {
+  if (staffId && isValidUuid(staffId)) return staffId;
+  const clean = (staffName || '').trim();
+  if (!clean) return null;
+
+  try {
+    const { data: staffRows } = await supabase
+      .from('staff')
+      .select('id')
+      .eq('shop_id', shopId)
+      .ilike('name', clean)
+      .limit(1);
+    if (staffRows && staffRows.length > 0) return staffRows[0].id;
+  } catch {}
+  return null;
+}
+
+/**
  * Persist an expense strictly into the current salon's expenses table.
  */
 export async function saveExpenseToDb(
@@ -1961,20 +2034,12 @@ export async function saveExpenseToDb(
   expense: Omit<Expense, 'id' | 'date'> & { id?: string; date?: string }
 ): Promise<string | null> {
   try {
+    await ensureSupabaseOwnerSession(shopId);
     const expId = isValidUuid(expense.id) ? expense.id! : generateUuid();
-
-    // Look up category_id if available
-    let catId: string | null = null;
-    try {
-      const { data: catRows } = await supabase
-        .from('expense_categories')
-        .select('id')
-        .or(`shop_id.eq.${shopId},shop_id.is.null`)
-        .limit(1);
-      if (catRows && catRows.length > 0) {
-        catId = catRows[0].id;
-      }
-    } catch {}
+    const [catId, staffId] = await Promise.all([
+      resolveExpenseCategoryId(shopId, expense.cat),
+      resolveExpenseStaffId(shopId, expense.staff, expense.staffId),
+    ]);
 
     const { data, error } = await supabase
       .from('expenses')
@@ -1982,11 +2047,12 @@ export async function saveExpenseToDb(
         id: expId,
         shop_id: shopId,
         category_id: catId,
-        note: expense.note.trim(),
+        note: (expense.note || '').trim(),
         amount_minor: Math.round(expense.amount * 100),
         payment_method: expense.pm || 'UPI',
         expense_date: expense.date || new Date().toISOString().split('T')[0],
         include_in_profit: expense.inProfit !== false,
+        ...(staffId ? { staff_id: staffId } : {}),
       })
       .select('id')
       .single();
@@ -2006,6 +2072,7 @@ export async function saveExpenseToDb(
  */
 export async function deleteExpenseInDb(shopId: string, expenseId: string): Promise<boolean> {
   try {
+    await ensureSupabaseOwnerSession(shopId);
     const { error } = await supabase
       .from('expenses')
       .delete()
@@ -2027,20 +2094,30 @@ export async function updateExpenseInDb(
   updated: Partial<Expense>
 ): Promise<boolean> {
   try {
-    const payload: Record<string, any> = {};
+    await ensureSupabaseOwnerSession(shopId);
+    const payload: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
     if (updated.amount !== undefined) payload.amount_minor = Math.round(Number(updated.amount) * 100);
     if (updated.note !== undefined) payload.note = updated.note.trim();
     if (updated.pm !== undefined) payload.payment_method = updated.pm;
     if (updated.date !== undefined) payload.expense_date = updated.date;
     if (updated.inProfit !== undefined) payload.include_in_profit = updated.inProfit;
+    if (updated.cat !== undefined) {
+      payload.category_id = await resolveExpenseCategoryId(shopId, updated.cat);
+    }
+    if (updated.staff !== undefined || updated.staffId !== undefined) {
+      payload.staff_id = await resolveExpenseStaffId(shopId, updated.staff, updated.staffId);
+    }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('expenses')
       .update(payload)
       .eq('shop_id', shopId)
-      .eq('id', expenseId);
+      .eq('id', expenseId)
+      .select('id');
 
-    return !error;
+    return !error && !!data && data.length > 0;
   } catch {
     return false;
   }

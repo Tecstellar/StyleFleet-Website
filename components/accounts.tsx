@@ -14,8 +14,9 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
   const { isDarkMode, expenses, addExpense, updateExpense, deleteExpense, bills, staff, showToast, role, hasPermission, shopProfile, t } = useSalon();
   const canViewPastExpenses = role === 'owner' || hasPermission('past_expenses');
 
-  // Time filter state
+  // Time & Stylist filter state
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('today');
+  const [selectedStylistId, setSelectedStylistId] = useState<string>('all');
   
   // Registration Date from shopProfile or earliest transaction
   const regDateStr = useMemo(() => {
@@ -111,17 +112,70 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
     return billDate >= filterDateRange.start && billDate <= filterDateRange.end;
   };
 
-  // Filtered Expenses
+  // Stylist options for filter (active staff + any historically linked staff)
+  const stylistFilterOptions = useMemo(() => {
+    const linkedIds = new Set(expenses.map((e) => e.staffId).filter(Boolean) as string[]);
+    const linkedNames = new Set(expenses.map((e) => (e.staff || '').trim().toLowerCase()).filter(Boolean));
+    const list = staff
+      .filter((s) => s.status !== 'inactive' || linkedIds.has(s.id) || linkedNames.has(s.name.trim().toLowerCase()))
+      .map((s) => ({
+        key: s.id,
+        name: s.name.trim(),
+        inactive: s.status === 'inactive',
+      }));
+    const knownLower = new Set(list.map((x) => x.name.toLowerCase()));
+    for (const exp of expenses) {
+      const n = (exp.staff || '').trim();
+      if (n && !knownLower.has(n.toLowerCase())) {
+        knownLower.add(n.toLowerCase());
+        list.push({ key: `name:${n.toLowerCase()}`, name: n, inactive: false });
+      }
+    }
+    return list;
+  }, [staff, expenses]);
+
+  const selectedStylistOption = useMemo(
+    () => stylistFilterOptions.find((s) => s.key === selectedStylistId) || null,
+    [stylistFilterOptions, selectedStylistId]
+  );
+
+  // Filtered Expenses (by financial period + selected stylist)
   const filteredExpenses = useMemo(() => {
+    const parseExpenseDate = (exp: Expense): Date | null => {
+      if (exp.date) {
+        const ymd = exp.date.split('T')[0];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+          const [y, m, d] = ymd.split('-').map(Number);
+          return new Date(y, m - 1, d, 12, 0, 0, 0);
+        }
+        const parsed = new Date(exp.date);
+        if (!isNaN(parsed.getTime())) {
+          parsed.setHours(12, 0, 0, 0);
+          return parsed;
+        }
+      }
+      if (exp.createdAt) {
+        const parsed = new Date(exp.createdAt);
+        if (!isNaN(parsed.getTime())) return parsed;
+      }
+      return null;
+    };
+
     return expenses.filter((exp) => {
-      if (!exp.date) return selectedPeriod === 'today';
-      const d = new Date(exp.date);
-      if (isNaN(d.getTime())) return selectedPeriod === 'today';
-      // Set to midday to avoid timezone edge issues
-      d.setHours(12, 0, 0, 0);
-      return d >= filterDateRange.start && d <= filterDateRange.end;
+      const d = parseExpenseDate(exp);
+      const inPeriod = d ? (d >= filterDateRange.start && d <= filterDateRange.end) : selectedPeriod === 'today';
+      if (!inPeriod) return false;
+
+      if (selectedStylistId !== 'all') {
+        const matchesId = exp.staffId && exp.staffId === selectedStylistId;
+        const matchesName =
+          selectedStylistOption &&
+          (exp.staff || '').trim().toLowerCase() === selectedStylistOption.name.toLowerCase();
+        return !!(matchesId || matchesName);
+      }
+      return true;
     });
-  }, [expenses, filterDateRange, selectedPeriod]);
+  }, [expenses, filterDateRange, selectedPeriod, selectedStylistId, selectedStylistOption]);
 
   // Filtered Bills
   const filteredBills = useMemo(() => {
@@ -328,6 +382,10 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
       return;
     }
 
+    const matchedStaff = linkedStaff
+      ? staff.find((s) => s.name.trim().toLowerCase() === linkedStaff.trim().toLowerCase())
+      : undefined;
+
     if (editingExpenseId) {
       updateExpense(editingExpenseId, {
         cat,
@@ -335,10 +393,10 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
         note: note.trim(),
         pm,
         staff: linkedStaff || null,
+        staffId: matchedStaff?.id || null,
         inProfit,
         date: expenseDate || todayIso,
       });
-      showToast(`Expense updated successfully.`);
     } else {
       addExpense({
         cat,
@@ -346,6 +404,7 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
         note: note.trim(),
         pm,
         staff: linkedStaff || null,
+        staffId: matchedStaff?.id || null,
         inProfit,
         date: expenseDate || todayIso,
       });
@@ -365,11 +424,11 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
 
   const categoryOptions = [
     'Products & stock',
-    'Maintenance',
-    'Staff salaries',
-    'Electricity & utility',
+    'Salaries',
     'Rent',
-    'Marketing & maintenance',
+    'Electricity',
+    'Marketing',
+    'Maintenance',
     'Other',
   ];
 
@@ -541,6 +600,66 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
             </span>
           </div>
         )}
+
+        {/* Stylist Filter (Stylist-based expense filtering nearby Financial Period) */}
+        {stylistFilterOptions.length > 0 && (
+          <div className={`mt-3 pt-3 border-t ${isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
+            <div className="flex items-center justify-between gap-2 px-1 mb-2">
+              <span className={`text-[11px] font-black uppercase tracking-wider ${isDarkMode ? 'text-sky-400' : 'text-sky-700'}`}>
+                Select Stylist
+              </span>
+              {selectedStylistId !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedStylistId('all')}
+                  className="text-[11px] font-bold text-[#D4AF37] hover:underline cursor-pointer"
+                >
+                  Clear Filter
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 px-0.5">
+              <button
+                type="button"
+                onClick={() => setSelectedStylistId('all')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap shrink-0 transition-all cursor-pointer border ${
+                  selectedStylistId === 'all'
+                    ? 'bg-sky-500/20 border-sky-400 text-sky-400'
+                    : isDarkMode
+                    ? 'bg-[#142347] border-[#2A3858] text-[#A7B0C3] hover:text-white'
+                    : 'bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900'
+                }`}
+              >
+                All Stylists
+              </button>
+              {stylistFilterOptions.map((st) => {
+                const isSelected = selectedStylistId === st.key;
+                return (
+                  <button
+                    key={st.key}
+                    type="button"
+                    onClick={() => setSelectedStylistId(st.key)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold whitespace-nowrap shrink-0 transition-all cursor-pointer border flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-sky-500/20 border-sky-400 text-sky-400'
+                        : isDarkMode
+                        ? 'bg-[#142347] border-[#2A3858] text-[#A7B0C3] hover:text-white'
+                        : 'bg-slate-100 border-slate-200 text-slate-700 hover:text-slate-900'
+                    }`}
+                  >
+                    <svg className="w-3 h-3 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span>
+                      {st.name}
+                      {st.inactive ? ' (inactive)' : ''}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 3. Dynamic Period KPI Cards */}
@@ -645,6 +764,7 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
             </h3>
             <p className={`text-xs mt-0.5 ${isDarkMode ? 'text-[#A7B0C3]' : 'text-slate-500'}`}>
               Filtered by: {periodOptions.find((p) => p.id === selectedPeriod)?.label}
+              {selectedStylistOption ? ` · Stylist: ${selectedStylistOption.name}` : ''}
             </p>
           </div>
           <button
@@ -656,17 +776,19 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
         </div>
 
         {filteredExpenses.length === 0 ? (
-          <div className="py-12 text-center space-y-3">
-            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-slate-400">
+          <div className="py-10 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-slate-400">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
             </div>
             <p className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-800'}`}>
-              No expenses recorded for this period
+              {selectedStylistOption
+                ? `No expenses linked to ${selectedStylistOption.name} for this period`
+                : 'No expenses recorded for this period'}
             </p>
             <p className={`text-xs max-w-sm mx-auto ${isDarkMode ? 'text-[#737D92]' : 'text-slate-500'}`}>
-              Click &quot;Add Expense&quot; above to log stock replenishment, salon rent, staff salaries, electricity, or maintenance.
+              Click &quot;Add Expense&quot; above to log stock replenishment, salon rent, salaries, electricity, or maintenance.
             </p>
             <button
               onClick={handleOpenAdd}
@@ -676,124 +798,121 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
             </button>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {filteredExpenses.map((exp) => (
               <div
                 key={exp.id}
-                className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
+                className={`p-3.5 rounded-2xl border flex flex-col justify-between gap-2 transition-all ${
                   isDarkMode
                     ? 'bg-[#0B1F44] border-white/5 hover:border-[#2A3858]'
                     : 'bg-[#F8FAFC] border-slate-200 hover:border-slate-300'
                 }`}
               >
-                {/* Left Side Info */}
-                <div className="space-y-1.5 flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-black text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded-lg border border-amber-400/20">
+                {/* Top Row: Category + Stylist tags on left, Amount + 3-dots menu on right */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                    <span className="text-[11px] font-black text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-lg border border-amber-400/20">
                       {exp.cat}
                     </span>
                     {exp.staff && (
                       <span className="text-[11px] font-bold text-sky-400 bg-sky-400/10 px-2 py-0.5 rounded-lg border border-sky-400/20 flex items-center gap-1">
-                        <svg className="w-3 h-3 text-sky-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-3 h-3 text-sky-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
-                        <span>{exp.staff}</span>
+                        <span className="truncate max-w-[110px]">{exp.staff}</span>
                       </span>
                     )}
                     {exp.inProfit === false && (
                       <span className="text-[10px] font-bold text-sky-400 bg-sky-400/10 px-2 py-0.5 rounded-lg border border-sky-400/20">
-                        Excluded from Profit
+                        Not in Profit
                       </span>
                     )}
-                    <span className={`text-[11px] font-medium flex items-center gap-1 ${isDarkMode ? 'text-[#737D92]' : 'text-slate-500'}`}>
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span>{exp.date || todayIso}</span>
-                    </span>
                   </div>
 
-                  {exp.note && (
-                    <p className={`text-xs font-medium ${isDarkMode ? 'text-[#E2E8F0]' : 'text-slate-700'}`}>
-                      {exp.note}
-                    </p>
-                  )}
-
-                  <span className={`text-[11px] font-medium block ${isDarkMode ? 'text-[#A7B0C3]' : 'text-slate-500'}`}>
-                    Payment Mode: <strong className={isDarkMode ? 'text-white' : 'text-slate-800'}>{exp.pm}</strong>
-                  </span>
-                </div>
-
-                {/* Right Side: Amount and Vertical 3-Dots Action Menu */}
-                <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-white/5">
-                  <div className="text-right">
-                    <strong className="text-base sm:text-lg text-red-400 font-black block">
-                      ₹ {exp.amount.toLocaleString()}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <strong className="text-base text-red-400 font-black tabular-nums">
+                      ₹{exp.amount.toLocaleString('en-IN')}
                     </strong>
-                    <span className={`text-[10px] block ${isDarkMode ? 'text-[#737D92]' : 'text-slate-500'}`}>
-                      {exp.inProfit === false ? 'Drawing / Non-profit' : 'Deducted from Profit'}
-                    </span>
-                  </div>
 
-                  {/* Vertical 3-dots Menu Container */}
-                  <div className="relative expense-menu-container">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveMenuId(activeMenuId === exp.id ? null : exp.id);
-                      }}
-                      className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-colors cursor-pointer ${
-                        isDarkMode
-                          ? 'bg-[#121B33] border-[#2A3858] text-[#A7B0C3] hover:text-white hover:border-[#D4AF37]'
-                          : 'bg-white border-slate-300 text-slate-700 hover:text-black hover:border-slate-400 shadow-xs'
-                      }`}
-                      title="More options"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <circle cx="12" cy="5" r="1.5" />
-                        <circle cx="12" cy="12" r="1.5" />
-                        <circle cx="12" cy="19" r="1.5" />
-                      </svg>
-                    </button>
-
-                    {/* Popover Dropdown Menu */}
-                    {activeMenuId === exp.id && (
-                      <div
-                        className={`absolute right-0 top-10 w-36 rounded-2xl border shadow-2xl py-1.5 z-30 animate-fadeIn ${
-                          isDarkMode ? 'bg-[#0F1C36] border-[#2A3858] text-white' : 'bg-white border-slate-200 text-slate-800'
+                    {/* Vertical 3-dots Menu Container */}
+                    <div className="relative expense-menu-container">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(activeMenuId === exp.id ? null : exp.id);
+                        }}
+                        className={`w-7 h-7 rounded-xl border flex items-center justify-center transition-colors cursor-pointer ${
+                          isDarkMode
+                            ? 'bg-[#121B33] border-[#2A3858] text-[#A7B0C3] hover:text-white hover:border-[#D4AF37]'
+                            : 'bg-white border-slate-300 text-slate-700 hover:text-black hover:border-slate-400 shadow-xs'
                         }`}
+                        title="More options"
                       >
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEdit(exp)}
-                          className={`w-full px-3.5 py-2 text-left text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer ${
-                            isDarkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-100 text-slate-900'
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <circle cx="12" cy="5" r="1.5" />
+                          <circle cx="12" cy="12" r="1.5" />
+                          <circle cx="12" cy="19" r="1.5" />
+                        </svg>
+                      </button>
+
+                      {/* Popover Dropdown Menu */}
+                      {activeMenuId === exp.id && (
+                        <div
+                          className={`absolute right-0 top-9 w-36 rounded-2xl border shadow-2xl py-1.5 z-30 animate-fadeIn ${
+                            isDarkMode ? 'bg-[#0F1C36] border-[#2A3858] text-white' : 'bg-white border-slate-200 text-slate-800'
                           }`}
                         >
-                          <svg className="w-3.5 h-3.5 text-[#D4AF37]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
-                          <span>Edit</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(exp)}
+                            className={`w-full px-3.5 py-2 text-left text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer ${
+                              isDarkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-100 text-slate-900'
+                            }`}
+                          >
+                            <svg className="w-3.5 h-3.5 text-[#D4AF37]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                            <span>Edit</span>
+                          </button>
 
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveMenuId(null);
-                            deleteExpense(exp.id);
-                          }}
-                          className={`w-full px-3.5 py-2 text-left text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer text-red-400 hover:bg-red-500/10`}
-                        >
-                          <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                          </svg>
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              deleteExpense(exp.id);
+                            }}
+                            className={`w-full px-3.5 py-2 text-left text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer text-red-400 hover:bg-red-500/10`}
+                          >
+                            <svg className="w-3.5 h-3.5 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <line x1="18" y1="6" x2="6" y2="18" />
+                              <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                </div>
+
+                {/* Middle: Note (if present) */}
+                {exp.note && (
+                  <p className={`text-xs font-medium truncate ${isDarkMode ? 'text-[#E2E8F0]' : 'text-slate-700'}`} title={exp.note}>
+                    {exp.note}
+                  </p>
+                )}
+
+                {/* Bottom Row: Date + Payment Mode on left, Profit state on right */}
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-white/5 text-[11px]">
+                  <span className={`font-medium flex items-center gap-1.5 ${isDarkMode ? 'text-[#A7B0C3]' : 'text-slate-500'}`}>
+                    <span>{exp.date || todayIso}</span>
+                    <span>·</span>
+                    <strong className={isDarkMode ? 'text-white' : 'text-slate-800'}>{exp.pm}</strong>
+                  </span>
+                  <span className={`text-[10px] ${isDarkMode ? 'text-[#737D92]' : 'text-slate-500'}`}>
+                    {exp.inProfit === false ? 'Drawing' : 'In Profit'}
+                  </span>
                 </div>
               </div>
             ))}
@@ -842,7 +961,7 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
                     isDarkMode ? 'bg-[#121B33] border-[#2A3858] text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
                   } focus:border-[#D4AF37]`}
                 >
-                  {categoryOptions.map((c) => (
+                  {(categoryOptions.includes(cat) ? categoryOptions : [cat, ...categoryOptions]).map((c) => (
                     <option key={c} value={c} className={isDarkMode ? 'bg-[#0B1E3B]' : 'bg-white'}>
                       {c}
                     </option>
@@ -941,7 +1060,9 @@ export const AccountsView: React.FC<AccountsViewProps> = () => {
                   <option value="" className={isDarkMode ? 'bg-[#0B1E3B]' : 'bg-white'}>
                     -- None (General Salon Overhead) --
                   </option>
-                  {staff.map((s) => (
+                  {staff
+                    .filter((s) => s.status !== 'inactive' || s.name === linkedStaff)
+                    .map((s) => (
                     <option key={s.id} value={s.name} className={isDarkMode ? 'bg-[#0B1E3B]' : 'bg-white'}>
                       {s.name} ({s.role})
                     </option>
