@@ -8,6 +8,37 @@ import { matchStaffName, parseSelectedStylists } from '@/lib/salon-helpers';
 type ReportTab = 'report' | 'summary';
 type ReportSliderPeriod = 'today' | 'week' | 'month' | 'custom';
 
+/** Matches mobile isOpeningDueBill: excludes DUE-* and opening due balance entries from service sales & profit. */
+const isOpeningDueBill = (b: Bill): boolean => {
+  if (b.id?.startsWith('DUE-')) return true;
+  const n = (b.notes || '').toLowerCase();
+  return (
+    n.includes('opening balance') ||
+    n.includes('adjusted customer due') ||
+    n.includes('opening due balance') ||
+    n.includes('customer opening due balance') ||
+    n.includes('initial opening')
+  );
+};
+
+/** Matches mobile Net Profit & Margin: genuine sales billed (total) minus expenses counted in profit. */
+const calcNetProfitAndMargin = (billList: Bill[], expenseList: Expense[]) => {
+  const salesTotal = billList
+    .filter((b) => b.confirmationStatus !== 'Pending' && !isOpeningDueBill(b))
+    .reduce((acc, b) => acc + (b.total || 0), 0);
+  const countedExpenses = expenseList
+    .filter((e) => e.inProfit !== false)
+    .reduce((acc, e) => acc + (e.amount || 0), 0);
+  const netProfit = salesTotal - countedExpenses;
+  const marginPct = salesTotal > 0 ? Math.round((netProfit / salesTotal) * 100) : 0;
+  return { salesTotal, countedExpenses, netProfit, marginPct };
+};
+
+const getLocalDateKey = (ts: number): string => {
+  const d = new Date(ts);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
 export function ReportsView() {
   const { role, bills, expenses, staff, services, shopProfile, isDarkMode, showToast, hasPermission, loggedInStaffName } = useSalon();
 
@@ -45,8 +76,12 @@ export function ReportsView() {
     return 0;
   };
 
-  // Timestamp parser for an expense
+  // Timestamp parser for an expense (createdAt first to match mobile getExpenseTimestamp)
   const getExpenseTime = (exp: Expense): number => {
+    if (exp.createdAt) {
+      const t = new Date(exp.createdAt).getTime();
+      if (!isNaN(t)) return t;
+    }
     if (exp.date) {
       const t = new Date(exp.date).getTime();
       if (!isNaN(t)) return t;
@@ -211,10 +246,10 @@ export function ReportsView() {
     return reportExpenses.reduce((acc, e) => acc + (e.amount || 0), 0);
   }, [reportExpenses]);
 
-  const netProfit = totalSalesCollected - totalExpensesAmount;
-  const marginPct = totalSalesCollected > 0
-    ? Math.round((netProfit / totalSalesCollected) * 100)
-    : 0;
+  const { netProfit, marginPct } = useMemo(
+    () => calcNetProfitAndMargin(reportBills, reportExpenses),
+    [reportBills, reportExpenses]
+  );
 
   // Payment Summary (Zero Transactions, UPI, Cash, Card, Total Collected)
   const paymentSummary = useMemo(() => {
@@ -249,32 +284,40 @@ export function ReportsView() {
 
   // Day-wise Breakdown
   const dayWiseBreakdown = useMemo(() => {
-    const map: Record<string, { date: string; billsCount: number; gross: number; collected: number; expenses: number; netProfit: number }> = {};
+    const map: Record<string, { date: string; billsCount: number; gross: number; collected: number; expenses: number; profitSales: number; countedExpenses: number; netProfit: number }> = {};
 
     reportBills.forEach((b) => {
-      const dStr = b.dateStr?.split(',')[0] || (b.createdAt ? b.createdAt.split('T')[0] : 'Today');
+      const t = getBillTime(b);
+      const dStr = t ? getLocalDateKey(t) : (b.dateStr?.split(',')[0] || todayStr);
       if (!map[dStr]) {
-        map[dStr] = { date: dStr, billsCount: 0, gross: 0, collected: 0, expenses: 0, netProfit: 0 };
+        map[dStr] = { date: dStr, billsCount: 0, gross: 0, collected: 0, expenses: 0, profitSales: 0, countedExpenses: 0, netProfit: 0 };
       }
       map[dStr].billsCount += 1;
       map[dStr].gross += b.total || 0;
       map[dStr].collected += b.paidAmount || b.total || 0;
+      if (b.confirmationStatus !== 'Pending' && !isOpeningDueBill(b)) {
+        map[dStr].profitSales += b.total || 0;
+      }
     });
 
     reportExpenses.forEach((e) => {
-      const dStr = e.date ? e.date.split('T')[0] : 'Today';
+      const t = getExpenseTime(e);
+      const dStr = t ? getLocalDateKey(t) : (e.date ? e.date.split('T')[0] : todayStr);
       if (!map[dStr]) {
-        map[dStr] = { date: dStr, billsCount: 0, gross: 0, collected: 0, expenses: 0, netProfit: 0 };
+        map[dStr] = { date: dStr, billsCount: 0, gross: 0, collected: 0, expenses: 0, profitSales: 0, countedExpenses: 0, netProfit: 0 };
       }
       map[dStr].expenses += e.amount || 0;
+      if (e.inProfit !== false) {
+        map[dStr].countedExpenses += e.amount || 0;
+      }
     });
 
     Object.values(map).forEach((item) => {
-      item.netProfit = item.collected - item.expenses;
+      item.netProfit = item.profitSales - item.countedExpenses;
     });
 
     return Object.values(map).sort((a, b) => b.date.localeCompare(a.date));
-  }, [reportBills, reportExpenses]);
+  }, [reportBills, reportExpenses, todayStr]);
 
   // Stylist Performance - Strictly synchronized with registered staff team
   const stylistPerformance = useMemo(() => {
@@ -606,8 +649,10 @@ export function ReportsView() {
     return selectedMonthExpenses.reduce((acc, e) => acc + (e.amount || 0), 0);
   }, [selectedMonthExpenses]);
 
-  const monthlyNetProfit = monthlySales - monthlyExpenses;
-  const monthlyMargin = monthlySales > 0 ? Math.round((monthlyNetProfit / monthlySales) * 100) : 0;
+  const { netProfit: monthlyNetProfit, marginPct: monthlyMargin } = useMemo(
+    () => calcNetProfitAndMargin(selectedMonthBills, selectedMonthExpenses),
+    [selectedMonthBills, selectedMonthExpenses]
+  );
   const monthlyBillsCount = selectedMonthBills.length;
   const monthlyOutstanding = useMemo(() => {
     return selectedMonthBills.reduce((acc, b) => acc + (b.dueAmount || 0), 0);
@@ -683,9 +728,9 @@ export function ReportsView() {
 
   // Day-by-Day comparison for selected month (strictly from registration day onwards)
   const monthlyDayBreakdown = useMemo(() => {
-    const daysMap: Record<number, { day: number; sales: number; expenses: number }> = {};
+    const daysMap: Record<number, { day: number; sales: number; expenses: number; profitSales: number; countedExpenses: number; netProfit: number }> = {};
     for (let i = startDay; i <= endDay; i++) {
-      daysMap[i] = { day: i, sales: 0, expenses: 0 };
+      daysMap[i] = { day: i, sales: 0, expenses: 0, profitSales: 0, countedExpenses: 0, netProfit: 0 };
     }
 
     selectedMonthBills
@@ -697,6 +742,9 @@ export function ReportsView() {
           const day = d.getDate();
           if (daysMap[day]) {
             daysMap[day].sales += b.paidAmount || b.total || 0;
+            if (!isOpeningDueBill(b)) {
+              daysMap[day].profitSales += b.total || 0;
+            }
           }
         }
       });
@@ -708,11 +756,17 @@ export function ReportsView() {
         const day = d.getDate();
         if (daysMap[day]) {
           daysMap[day].expenses += e.amount || 0;
+          if (e.inProfit !== false) {
+            daysMap[day].countedExpenses += e.amount || 0;
+          }
         }
       }
     });
 
-    return Object.values(daysMap);
+    return Object.values(daysMap).map((row) => ({
+      ...row,
+      netProfit: row.profitSales - row.countedExpenses,
+    }));
   }, [startDay, endDay, selectedMonthBills, selectedMonthExpenses]);
 
   // Download Monthly Report Action (Excel / CSV)
@@ -736,7 +790,7 @@ export function ReportsView() {
     csv += `DAY-BY-DAY MONTHLY FINANCIAL TREND\n`;
     csv += `Day,Sales Collected (INR),Expenses (INR),Net Day Profit (INR)\n`;
     monthlyDayBreakdown.forEach((d) => {
-      csv += `${d.day} ${monthNames[selectedMonth]} ${selectedYear},${d.sales},${d.expenses},${d.sales - d.expenses}\n`;
+      csv += `${d.day} ${monthNames[selectedMonth]} ${selectedYear},${d.sales},${d.expenses},${d.netProfit}\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -828,7 +882,7 @@ export function ReportsView() {
                 <td><strong>${d.day} ${monthNames[selectedMonth]} ${selectedYear}</strong></td>
                 <td class="text-right">₹${d.sales.toLocaleString('en-IN')}</td>
                 <td class="text-right">₹${d.expenses.toLocaleString('en-IN')}</td>
-                <td class="text-right gold">₹${(d.sales - d.expenses).toLocaleString('en-IN')}</td>
+                <td class="text-right gold">₹${d.netProfit.toLocaleString('en-IN')}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -1607,8 +1661,8 @@ export function ReportsView() {
                         <td className="py-2 px-3 text-right text-amber-400">
                           {d.expenses > 0 ? `₹${d.expenses.toLocaleString('en-IN')}` : '—'}
                         </td>
-                        <td className={`py-2 px-3 text-right font-bold ${d.sales - d.expenses >= 0 ? 'text-[#D4AF37]' : 'text-rose-400'}`}>
-                          {d.sales > 0 || d.expenses > 0 ? `₹${(d.sales - d.expenses).toLocaleString('en-IN')}` : '—'}
+                        <td className={`py-2 px-3 text-right font-bold ${d.netProfit >= 0 ? 'text-[#D4AF37]' : 'text-rose-400'}`}>
+                          {d.sales > 0 || d.expenses > 0 || d.netProfit !== 0 ? `₹${d.netProfit.toLocaleString('en-IN')}` : '—'}
                         </td>
                       </tr>
                     ))}

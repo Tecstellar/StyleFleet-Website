@@ -1010,6 +1010,7 @@ export async function fetchSalonDataFromDb(shopId: string): Promise<DatabaseSalo
       staff: null,
       inProfit: e.include_in_profit !== false,
       date: e.expense_date || new Date().toISOString().split('T')[0],
+      createdAt: e.created_at || undefined,
     }));
 
     return {

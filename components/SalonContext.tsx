@@ -173,6 +173,7 @@ export interface Expense {
   staff?: string | null;
   inProfit: boolean;
   date: string;
+  createdAt?: string;
 }
 
 interface SalonContextType {
