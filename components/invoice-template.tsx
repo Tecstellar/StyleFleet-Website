@@ -580,6 +580,7 @@ export function InvoiceTemplate({
 
         {/* 1. HEADER SECTION (NAVY BACKGROUND) */}
         <div
+          data-ui="invoice-header"
           className="bg-[#0F1A36] text-white p-5 sm:p-8 print:p-6"
           style={{ backgroundColor: '#0F1A36' }}
         >
@@ -598,7 +599,7 @@ export function InvoiceTemplate({
                     className="w-full h-full object-contain rounded-xl"
                   />
                 ) : (
-                  <span className="text-[#0F1A36] font-black">{salonInitial}</span>
+                  <span data-ui="invoice-logo-fallback" className="text-[#0F1A36] font-black">{salonInitial}</span>
                 )}
               </div>
               <div className="space-y-0.5">
@@ -613,7 +614,7 @@ export function InvoiceTemplate({
                   {shopProfile.city ? `, ${shopProfile.city}` : ''}
                   {shopProfile.pinCode ? ` – ${shopProfile.pinCode}` : ''}
                 </p>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-300">
                   {shopProfile.phone ? `+91 ${shopProfile.phone}` : '+91 XXXXX XXXXX'}
                   {shopProfile.gstin ? ` · GSTIN: ${shopProfile.gstin}` : ''}
                 </p>
@@ -630,13 +631,13 @@ export function InvoiceTemplate({
               </h2>
               <div className="text-xs space-y-0.5">
                 <div className="flex items-center sm:justify-end gap-2 text-slate-300">
-                  <span className="text-slate-400">Invoice No.</span>
+                  <span className="text-slate-300">Invoice No.</span>
                   <strong className="text-white font-mono font-bold tracking-wide">
                     #{bill.id}
                   </strong>
                 </div>
                 <div className="flex items-center sm:justify-end gap-2 text-slate-300">
-                  <span className="text-slate-400">Invoice Date</span>
+                  <span className="text-slate-300">Invoice Date</span>
                   <strong className="text-white font-bold">
                     {invoiceDateStr}
                   </strong>
@@ -866,6 +867,7 @@ export function InvoiceTemplate({
 
               {/* Grand Total Banner */}
               <div
+                data-ui="invoice-total-banner"
                 className="bg-[#0F1A36] text-white rounded-xl px-4 py-3.5 print:py-2 flex items-center justify-between my-2 print:my-1 shadow-sm"
                 style={{ backgroundColor: '#0F1A36', color: '#ffffff' }}
               >
@@ -873,6 +875,7 @@ export function InvoiceTemplate({
                   TOTAL AMOUNT
                 </span>
                 <span
+                  data-ui="invoice-total-amount"
                   className="text-xl sm:text-2xl font-black font-mono text-[#D4A515]"
                   style={{ color: '#D4A515' }}
                 >
@@ -924,7 +927,7 @@ export function InvoiceTemplate({
 
         {/* 8. SCREEN-ONLY BOTTOM TOOLBAR: Download PDF option for both web and mobile */}
         {!(onEdit || onDelete || onClose) ? (
-          <div className="no-print p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-center">
+          <div data-ui="invoice-footer" className="no-print p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-center">
             <button
               type="button"
               disabled={isGeneratingPdf}
@@ -943,7 +946,7 @@ export function InvoiceTemplate({
             </button>
           </div>
         ) : shareOptionsOpen ? (
-          <div className="no-print p-4 bg-slate-900 border-t border-slate-800">
+          <div data-ui="invoice-footer" className="no-print p-4 bg-slate-900 border-t border-slate-800">
             <div className="w-full flex items-center justify-between gap-2 animate-fadeIn">
               <div className="flex items-center gap-2">
                 {canShareBills && (
@@ -995,7 +998,7 @@ export function InvoiceTemplate({
             </div>
           </div>
         ) : (
-          <div className="no-print p-4 bg-slate-900 border-t border-slate-800">
+          <div data-ui="invoice-footer" className="no-print p-4 bg-slate-900 border-t border-slate-800">
             <div className="w-full flex items-center justify-between gap-3">
               <button
                 type="button"

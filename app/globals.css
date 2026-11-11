@@ -124,6 +124,56 @@ html.light .border-slate-200 {
   border-color: #CBD5E1 !important;
 }
 
+/* Preserve intended light/gold typography on dark sections inside the invoice sheet in light mode */
+html.light #printable-luxury-invoice [data-ui="invoice-header"],
+html.light #printable-luxury-invoice [data-ui="invoice-header"] h1,
+html.light #printable-luxury-invoice [data-ui="invoice-header"] strong,
+html.light #printable-luxury-invoice [data-ui="invoice-header"] .text-white {
+  color: #ffffff !important;
+}
+
+html.light #printable-luxury-invoice [data-ui="invoice-header"] h2 {
+  color: #D4A515 !important;
+}
+
+html.light #printable-luxury-invoice [data-ui="invoice-header"] .text-slate-300,
+html.light #printable-luxury-invoice [data-ui="invoice-header"] .text-slate-400 {
+  color: #CBD5E1 !important;
+}
+
+html.light #printable-luxury-invoice [data-ui="invoice-header"] [data-ui="invoice-logo-fallback"] {
+  color: #0F1A36 !important;
+}
+
+html.light #printable-luxury-invoice [data-ui="invoice-table-header"],
+html.light #printable-luxury-invoice [data-ui="invoice-table-header"] .text-white {
+  color: #ffffff !important;
+}
+
+html.light #printable-luxury-invoice [data-ui="invoice-table-header"] [data-ui="amount-col"] {
+  color: #D4A515 !important;
+}
+
+html.light #printable-luxury-invoice [data-ui="invoice-total-banner"],
+html.light #printable-luxury-invoice [data-ui="invoice-total-banner"] span,
+html.light #printable-luxury-invoice [data-ui="invoice-total-banner"] .font-black {
+  color: #ffffff !important;
+}
+
+html.light #printable-luxury-invoice [data-ui="invoice-total-banner"] [data-ui="invoice-total-amount"] {
+  color: #D4A515 !important;
+}
+
+html.light #printable-luxury-invoice [data-ui="invoice-footer"] .text-white,
+html.light #printable-luxury-invoice [data-ui="invoice-footer"] .text-white span {
+  color: #ffffff !important;
+}
+
+html.light #printable-luxury-invoice [data-ui="invoice-footer"] .text-\[\#0B1F44\],
+html.light #printable-luxury-invoice [data-ui="invoice-footer"] .text-\[\#0B1F44\] span {
+  color: #0B1F44 !important;
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 90px;

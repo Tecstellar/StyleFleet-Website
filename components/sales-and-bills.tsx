@@ -981,7 +981,9 @@ export function SalesAndBillsView({
             </svg>
             <span>Recently Deleted</span>
             {recentlyDeletedBills.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-300 font-bold">
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                isDarkMode ? 'bg-rose-500/20 text-rose-300' : 'bg-rose-100 text-rose-700'
+              }`}>
                 {recentlyDeletedBills.length}
               </span>
             )}
@@ -1537,7 +1539,11 @@ export function SalesAndBillsView({
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                      <span className="text-[10px] px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-md border font-bold ${
+                        isDarkMode
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                          : 'bg-rose-100 text-rose-700 border-rose-300'
+                      }`}>
                         Deleted by: {b.deletedBy || b.staff || 'Stylist'}
                       </span>
                       <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -1685,7 +1691,7 @@ export function SalesAndBillsView({
 
                 {/* Single Date Input Column */}
                 <div className="space-y-1.5 pt-1">
-                  <label className="block text-[11px] font-bold text-[#A7B0C3]">
+                  <label className={`block text-[11px] font-bold ${isDarkMode ? 'text-[#A7B0C3]' : 'text-slate-700'}`}>
                     Choose Single Date:
                   </label>
                   <input
